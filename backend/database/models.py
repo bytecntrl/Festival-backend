@@ -36,6 +36,7 @@ class Orders(Model):
     """
 
     client = fields.CharField(20)
+    person = fields.IntField()
     take_away = fields.BooleanField()
     table = fields.IntField(null=True)
 
