@@ -1,0 +1,81 @@
+import secrets
+import string
+
+from argon2 import PasswordHasher
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from tortoise.contrib.fastapi import register_tortoise
+
+from backend.config import config, Config
+from backend.database import models, Users
+from backend.utils import UnicornException
+
+
+# env 
+load_dotenv()
+
+
+# config
+config.conf = Config()
+
+
+app = FastAPI()
+
+
+# db
+register_tortoise(
+    app,
+    config={
+        "connections": {
+            "default": {
+                "engine": "tortoise.backends.asyncpg",
+                "credentials": {
+                    "host": config.conf.HOST,
+                    "port": config.conf.PORT,
+                    "user": config.conf.USERNAME,
+                    "password": config.conf.PASSWORD,
+                    "database": config.conf.DB_NAME,
+                }
+            }
+        },
+        "apps": {
+            "models": {
+                "models": [models],
+                "default_connection": "default",
+            }
+        }
+    },
+    generate_schemas=True
+)
+
+
+# error
+@app.exception_handler(UnicornException)
+async def unicorn_exception_handler(_: Request, exc: UnicornException):
+    return JSONResponse(
+        status_code=exc.status,
+        content={
+            "error": True,
+            "message": exc.message
+        }
+    )
+
+
+# creation admin user if not exist
+@app.on_event("startup")
+async def startup_event():
+    if not await Users.filter(role="admin").exists():
+        alphabet = string.ascii_letters + string.digits
+        password = "".join(secrets.choice(alphabet) for _ in range(8))
+
+        ph = PasswordHasher()
+
+        await Users(
+            username="admin",
+            password=ph.hash(password),
+            role="admin"
+        ).save()
+
+        print("Username: admin")
+        print("Password:", password)
