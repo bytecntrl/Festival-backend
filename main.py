@@ -23,6 +23,12 @@ config.conf = Config()
 app = FastAPI()
 
 
+# plugins
+from backend.plugins import auth
+
+app.include_router(auth.router)
+
+
 # db
 register_tortoise(
     app,
