@@ -70,3 +70,30 @@ async def refresh_token(
             status=404, 
             message="Refresh JWT Error!"
         )
+
+
+async def refresh_token_get(
+    refresh_token: str
+):
+    try:
+        t = jwt.decode(
+            refresh_token, 
+            config.conf.JWT_SECRET, 
+            algorithms=["HS256"]
+        )
+        return t
+
+    except (
+        InvalidTokenError,
+        DecodeError,
+        InvalidSignatureError,
+        ExpiredSignatureError,
+        InvalidIssuedAtError,
+        InvalidKeyError,
+        InvalidAlgorithmError,
+        MissingRequiredClaimError
+    ):
+        raise UnicornException(
+            status=404, 
+            message="Refresh JWT Error!"
+        )

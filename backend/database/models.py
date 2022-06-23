@@ -17,6 +17,14 @@ class Users(Model):
         table = "users"
 
 
+    async def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "role": self.role
+        }
+
+
 class Products(Model):
     """
     The Products model
