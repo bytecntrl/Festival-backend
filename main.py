@@ -25,9 +25,11 @@ app = FastAPI()
 
 # plugins
 from backend.plugins import auth
+from backend.plugins import products
 from backend.plugins import users
 
 app.include_router(auth.router)
+app.include_router(products.router)
 app.include_router(users.router)
 
 
