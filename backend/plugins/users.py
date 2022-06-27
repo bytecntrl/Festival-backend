@@ -1,5 +1,6 @@
 from argon2 import PasswordHasher
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from ..database import Users
 from ..utils import (
@@ -8,7 +9,6 @@ from ..utils import (
     refresh_token_get, 
     UnicornException
 )
-from pydantic import BaseModel
 
 
 router = APIRouter(

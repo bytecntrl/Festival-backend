@@ -47,6 +47,8 @@ class Orders(Model):
     person = fields.IntField()
     take_away = fields.BooleanField()
     table = fields.IntField(null=True)
+    complete = fields.BooleanField(default=False, null=True)
+    user = fields.ForeignKeyField("models.Users")
 
     class Meta:
         table = "orders"

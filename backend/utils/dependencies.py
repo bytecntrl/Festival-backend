@@ -42,7 +42,7 @@ async def token_jwt(
 
 
 class Item(BaseModel):
-    reflesh_token: str
+    refresh_token: str
 
 
 async def refresh_token(
@@ -50,7 +50,7 @@ async def refresh_token(
 ):
     try:
         t = jwt.decode(
-            item.reflesh_token, 
+            item.refresh_token, 
             config.conf.JWT_SECRET, 
             algorithms=["HS256"]
         )
