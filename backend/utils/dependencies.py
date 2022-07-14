@@ -17,12 +17,11 @@ from .exception import UnicornException
 
 
 async def token_jwt(
-    Authorization: str = Header()
+    access_token: str = Header(alias="Authorization")
 ):
     try:
-        token = Authorization.split("Bearer ")[1]
-        t = jwt.decode(token, config.conf.JWT_SECRET, algorithms=["HS256"])
-        return t
+        token = access_token.split("Bearer ")[1]
+        return jwt.decode(token, config.conf.JWT_SECRET, algorithms=["HS256"])
 
     except (
         InvalidTokenError,
@@ -41,20 +40,12 @@ async def token_jwt(
         )
 
 
-class Item(BaseModel):
-    refresh_token: str
-
-
 async def refresh_token(
-    item: Item
+    refresh_token: str = Header(alias="Authorization")
 ):
     try:
-        t = jwt.decode(
-            item.refresh_token, 
-            config.conf.JWT_SECRET, 
-            algorithms=["HS256"]
-        )
-        return t
+        token = refresh_token.split("Bearer ")[1]
+        return jwt.decode(token, config.conf.JWT_SECRET, algorithms=["HS256"])
 
     except (
         InvalidTokenError,
@@ -64,34 +55,8 @@ async def refresh_token(
         InvalidIssuedAtError,
         InvalidKeyError,
         InvalidAlgorithmError,
-        MissingRequiredClaimError
-    ):
-        raise UnicornException(
-            status=404, 
-            message="Refresh JWT Error!"
-        )
-
-
-async def refresh_token_get(
-    refresh_token: str
-):
-    try:
-        t = jwt.decode(
-            refresh_token, 
-            config.conf.JWT_SECRET, 
-            algorithms=["HS256"]
-        )
-        return t
-
-    except (
-        InvalidTokenError,
-        DecodeError,
-        InvalidSignatureError,
-        ExpiredSignatureError,
-        InvalidIssuedAtError,
-        InvalidKeyError,
-        InvalidAlgorithmError,
-        MissingRequiredClaimError
+        MissingRequiredClaimError,
+        IndexError
     ):
         raise UnicornException(
             status=404, 

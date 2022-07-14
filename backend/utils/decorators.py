@@ -13,7 +13,7 @@ def roles(role: Union[str, list]):
             *args, **kwargs
         ):
             if token:
-                if not token["role"] in role:
+                if token["role"] not in role:
                     raise UnicornException(
                         status=405,
                         message="not allowed"
@@ -24,7 +24,7 @@ def roles(role: Union[str, list]):
                     **kwargs
                 )
             elif refresh_token:
-                if not refresh_token["role"] in role:
+                if refresh_token["role"] not in role:
                     raise UnicornException(
                         status=405,
                         message="not allowed"

@@ -26,7 +26,7 @@ class CreateOrdersItem(BaseModel):
     client: str
     person: int
     take_away: bool
-    table: int = None
+    table: int = 0
 
 
 # roles: create orders
@@ -42,12 +42,11 @@ async def create_orders(
             message="Wrong person"
         )
 
-    if item.table:
-        if item.table <= 0:
-            raise UnicornException(
-                status=400,
-                message="Wrong table"
-            )
+    if item.table <= 0:
+        raise UnicornException(
+            status=400,
+            message="Wrong table"
+        )
 
     user = await Users.get(username=refresh_token["username"])
 

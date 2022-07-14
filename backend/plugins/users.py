@@ -6,7 +6,7 @@ from ..database import Users
 from ..utils import (
     roles, 
     token_jwt,
-    refresh_token_get, 
+    refresh_token, 
     UnicornException
 )
 
@@ -21,7 +21,7 @@ router = APIRouter(
 @router.get("/")
 @roles("admin")
 async def get_users(
-    refresh_token: dict = Depends(refresh_token_get)
+    refresh_token: dict = Depends(refresh_token)
 ):
     users = Users.all()
     us = users.exclude(username=refresh_token["username"])
@@ -37,7 +37,7 @@ async def get_users(
 @router.get("/{username}")
 async def get_user_admin(
     username: str,
-    refresh_token: dict = Depends(refresh_token_get)
+    refresh_token: dict = Depends(refresh_token)
 ):
     user = await Users.get_or_none(username=username)
 

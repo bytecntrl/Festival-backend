@@ -64,7 +64,7 @@ async def login(
             "error": False,
             "message": "",
             "token": token,
-            "reflesh_token": refresh_token
+            "refresh_token": refresh_token
         }
     except (
         VerificationError,
@@ -91,7 +91,7 @@ async def register(
     item: RegisterItem,
     token: dict = Depends(token_jwt)
 ):
-    if not item.role in config.conf.ROLES:
+    if item.role not in config.conf.ROLES:
         raise UnicornException(
             status=404,
             message="Non-existent role"

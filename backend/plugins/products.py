@@ -6,7 +6,7 @@ from tortoise.exceptions import IntegrityError
 from ..database import Products
 from ..utils import (
     Category,
-    refresh_token_get,
+    refresh_token,
     roles, 
     token_jwt, 
     UnicornException
@@ -22,7 +22,7 @@ router = APIRouter(
 # all: get all products
 @router.get("/")
 async def get_products(
-    refresh_token: dict = Depends(refresh_token_get)
+    refresh_token: dict = Depends(refresh_token)
 ):
     p = await Products.all().values()
 
