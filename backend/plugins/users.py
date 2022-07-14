@@ -21,10 +21,10 @@ router = APIRouter(
 @router.get("/")
 @roles("admin")
 async def get_users(
-    refresh_token: dict = Depends(refresh_token)
+    token: dict = Depends(refresh_token)
 ):
     users = Users.all()
-    us = users.exclude(username=refresh_token["username"])
+    us = users.exclude(username=token.username)
 
     return {
         "error": False,
@@ -37,7 +37,7 @@ async def get_users(
 @router.get("/{username}")
 async def get_user_admin(
     username: str,
-    refresh_token: dict = Depends(refresh_token)
+    token: dict = Depends(refresh_token)
 ):
     user = await Users.get_or_none(username=username)
 
@@ -49,8 +49,8 @@ async def get_user_admin(
 
     if (
         not(
-            refresh_token["role"] == "admin" or 
-            refresh_token["username"] == username
+            token.role == "admin" or 
+            token.username == username
         )
     ):
         raise UnicornException(
@@ -77,7 +77,7 @@ async def change_password(
 ):
     ph = PasswordHasher()
 
-    await Users.filter(username=token["username"]).update(
+    await Users.filter(username=token.username).update(
         password=ph.hash(item.password)
     )
 

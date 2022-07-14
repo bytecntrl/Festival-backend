@@ -10,10 +10,10 @@ from jwt.exceptions import (
     InvalidAlgorithmError,
     MissingRequiredClaimError,
 )
-from pydantic import BaseModel
 
 from ..config import config
 from .exception import UnicornException
+from .token import TokenJwt
 
 
 async def token_jwt(
@@ -21,7 +21,19 @@ async def token_jwt(
 ):
     try:
         token = access_token.split("Bearer ")[1]
-        return jwt.decode(token, config.conf.JWT_SECRET, algorithms=["HS256"])
+        d = TokenJwt(**jwt.decode(
+            token, 
+            config.conf.JWT_SECRET, 
+            algorithms=["HS256"]
+        ))
+
+        if d.type != "access":
+            raise UnicornException(
+                status=400, 
+                message="Not access token!"
+            )
+
+        return d
 
     except (
         InvalidTokenError,
@@ -45,7 +57,19 @@ async def refresh_token(
 ):
     try:
         token = refresh_token.split("Bearer ")[1]
-        return jwt.decode(token, config.conf.JWT_SECRET, algorithms=["HS256"])
+        d = TokenJwt(**jwt.decode(
+            token, 
+            config.conf.JWT_SECRET, 
+            algorithms=["HS256"]
+        ))
+
+        if d.type != "refresh":
+            raise UnicornException(
+                status=400,
+                message="Not refresh token!"
+            )
+
+        return d
 
     except (
         InvalidTokenError,

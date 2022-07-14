@@ -34,7 +34,7 @@ class CreateOrdersItem(BaseModel):
 @roles(config.conf.ROLES)
 async def create_orders(
     item: CreateOrdersItem,
-    refresh_token: dict = Depends(refresh_token)
+    token: dict = Depends(refresh_token)
 ):
     if item.person <= 0:
         raise UnicornException(
@@ -48,7 +48,7 @@ async def create_orders(
             message="Wrong table"
         )
 
-    user = await Users.get(username=refresh_token["username"])
+    user = await Users.get(username=token.username)
 
     p = await Orders.create(
         client=item.client,
@@ -76,7 +76,7 @@ class AddProductToOrderItem(BaseModel):
 async def add_product_to_order(
     order_id: int,
     item: AddProductToOrderItem,
-    refresh_token: dict = Depends(refresh_token)
+    token: dict = Depends(refresh_token)
 ):
     if item.quantity <= 0:
         raise UnicornException(
@@ -99,7 +99,7 @@ async def add_product_to_order(
         )
 
     user = await order.user.values()
-    if user["username"] != refresh_token["username"]:
+    if user["username"] != token.username:
         raise UnicornException(
             status=405,
             message="not allowed"
@@ -154,7 +154,7 @@ async def save_order(
         )
     
     user = await order.user.values()
-    if user["username"] != token["username"]:
+    if user["username"] != token.username:
         raise UnicornException(
             status=405,
             message="not allowed"

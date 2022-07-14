@@ -44,7 +44,8 @@ async def login(
             {
                 "exp": datetime.now(tz=timezone.utc)+timedelta(seconds=60*15),
                 "username": username,
-                "role": user["role"]
+                "role": user["role"],
+                "type": "access"
             }, 
             config.conf.JWT_SECRET,
             algorithm="HS256"
@@ -54,7 +55,8 @@ async def login(
             {
                 "exp": datetime.now(tz=timezone.utc)+timedelta(seconds=60*60),
                 "username": username,
-                "role": user["role"]
+                "role": user["role"],
+                "type": "refresh"
             },
             config.conf.JWT_SECRET,
             algorithm="HS256"
@@ -125,18 +127,18 @@ class TokenItem(BaseModel):
 @router.post("/token")
 async def new_token(
     item: TokenItem,
-    refresh_token: dict = Depends(refresh_token)
+    token: dict = Depends(refresh_token)
 ):
-    user = await Users.get(username=refresh_token["username"])
+    user = await Users.get(username=token.username)
 
     try:
         ph = PasswordHasher()
         ph.verify(user.password, item.password)
 
-        token = jwt.encode(
+        access_token = jwt.encode(
             {
                 "exp": datetime.now(tz=timezone.utc)+timedelta(seconds=60*15),
-                "username": refresh_token["username"],
+                "username": token.username,
                 "role": user.role
             }, 
             config.conf.JWT_SECRET,
@@ -146,7 +148,7 @@ async def new_token(
         return {
             "error": False,
             "message": "",
-            "token": token
+            "token": access_token
         }
     except (
         VerificationError,
