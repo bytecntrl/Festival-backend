@@ -45,4 +45,4 @@ class Config(BaseSettings):
         }
 
 
-conf: Config = None
+conf: Config

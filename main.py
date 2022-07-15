@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from tortoise.contrib.fastapi import register_tortoise
 
 from backend.config import config, Config
-from backend.database import models, Users
+from backend.database import Users
 from backend.utils import UnicornException
 
 
@@ -53,7 +53,9 @@ register_tortoise(
         },
         "apps": {
             "models": {
-                "models": [models],
+                "models": [
+                    "backend.database.models",
+                ],
                 "default_connection": "default",
             }
         }
