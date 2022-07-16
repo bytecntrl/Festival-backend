@@ -5,3 +5,4 @@ tortoise-orm[accel,asyncpg]
 pydantic
 pyjwt
 uvicorn
+schema

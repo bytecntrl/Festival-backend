@@ -66,6 +66,7 @@ class ProductIngredient(Model):
     """
     The ProductIngredient model
     """
+
     product = fields.ForeignKeyField("models.Products")
     ingredient = fields.ForeignKeyField("models.Ingredients")
 
@@ -121,7 +122,7 @@ class Menu(Model):
     The Menu model
     """
 
-    name = fields.CharField(30)
+    name = fields.CharField(30, unique=True)
 
     class Meta:
         table = "menu"
@@ -146,6 +147,7 @@ class MenuProduct(Model):
 
     menu = fields.ForeignKeyField("models.Menu")
     product = fields.ForeignKeyField("models.Products")
+    optional = fields.BooleanField(default=False)
 
     class Meta:
         table = "menu_product"
