@@ -1,8 +1,8 @@
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from schema import Schema, Or
+from schema import Schema
 from tortoise.exceptions import IntegrityError
 
 from ..config import config
@@ -16,7 +16,7 @@ router = APIRouter(
 )
 
 
-SCHEMA_MENU = Schema([{"product": str, "optional": Or("true", "false", "True", "False", bool)}])
+SCHEMA_MENU = Schema([{"product": str, "optional": bool}])
 SCHEMA_ROLE = Schema(config.conf.ROLES)
 
 
@@ -32,7 +32,7 @@ async def exist_products(products: List[str]) -> bool:
 
 class AddMenuItem(BaseModel):
     name: str
-    products: List[Dict[str, Union[str, bool]]]
+    products: List[Dict]
     roles: List[str] = []
 
 
@@ -49,7 +49,6 @@ async def add_menu(
             message="Wrong name"
         )
     if not SCHEMA_MENU.is_valid(item.products):
-        print(item.products)
         raise UnicornException(
             status=400,
             message="Wrong products schema"
