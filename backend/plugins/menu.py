@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -6,7 +6,7 @@ from schema import Schema
 from tortoise.exceptions import IntegrityError
 
 from ..config import config
-from ..database import Menu, RoleMenu, MenuProduct, Products
+from ..database import Menu, MenuProduct, Products, RoleMenu
 from ..utils import TokenJwt, UnicornException, roles, token_jwt
 
 
@@ -32,8 +32,11 @@ async def exist_products(products: List[str]) -> bool:
 
 class AddMenuItem(BaseModel):
     name: str
-    products: List[Dict]
+    products: List[Dict[str, Union[str, bool]]]
     roles: List[str] = []
+
+    class Config:
+        smart_union = True
 
 
 # admin: add menu
