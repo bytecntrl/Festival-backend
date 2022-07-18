@@ -30,7 +30,7 @@ class Ingredients(Model):
     The Ingredients model
     """
 
-    name = fields.CharField(20)
+    name = fields.CharField(20, unique=True)
     price = fields.FloatField()
 
     class Meta:
