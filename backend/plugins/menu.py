@@ -7,7 +7,12 @@ from tortoise.exceptions import IntegrityError
 
 from ..config import config
 from ..database import Menu, MenuProduct, Products, RoleMenu
-from ..utils import TokenJwt, UnicornException, roles, token_jwt
+from ..utils import (
+    TokenJwt, 
+    UnicornException,
+    roles, 
+    token_jwt
+)
 
 
 router = APIRouter(

@@ -1,15 +1,19 @@
-from unicodedata import category
+from typing import List
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from schema import Schema
 from tortoise.exceptions import IntegrityError
 
-from ..database import Products
+from ..config import config
+from ..database import Products, RoleProduct, Subcategories
 from ..utils import (
-    Category,
-    refresh_token,
+    Category, 
+    TokenJwt, 
+    UnicornException,
+    refresh_token, 
     roles, 
-    token_jwt, 
-    UnicornException
+    token_jwt
 )
 
 
@@ -19,10 +23,13 @@ router = APIRouter(
 )
 
 
+SCHEMA_ROLE = Schema(config.conf.ROLES)
+
+
 # all: get all products
 @router.get("/")
 async def get_products(
-    token: dict = Depends(refresh_token)
+    token: TokenJwt = Depends(refresh_token)
 ):
     p = await Products.all().values()
 
@@ -37,6 +44,8 @@ class AddProductItem(BaseModel):
     name: str
     price: float
     category: Category
+    subcategory: str
+    roles: List[str]
 
 
 # admin: add product
@@ -44,20 +53,41 @@ class AddProductItem(BaseModel):
 @roles("admin")
 async def add_product(
     item: AddProductItem,
-    token: dict = Depends(token_jwt)
+    token: TokenJwt = Depends(token_jwt)
 ):
+    if not item.name:
+        raise UnicornException(
+            status=400,
+            message="Wrong name"
+        )
     if item.price <= 0:
         raise UnicornException(
             status=400,
             message="Wrong price"
         )
+    if not SCHEMA_ROLE.is_valid(item.roles):
+        raise UnicornException(
+            status=400,
+            message="Wrong roles"
+        )
 
     try:
-        await Products(
+        s = await Subcategories.get_or_none(name=item.subcategory)
+        if not s:
+            raise UnicornException(
+                status=400,
+                message="subcategory nonexistent"
+            )
+
+        p = await Products.create(
             name=item.name,
             price=item.price,
-            category=item.category.value
-        ).save()
+            category=item.category.value,
+            subcategory=s
+        )
+
+        for x in item.roles:
+            await RoleProduct(role=x, product=p).save()
 
         return {
             "error": False,
@@ -79,7 +109,7 @@ class DeleteProductItem(BaseModel):
 @roles("admin")
 async def delete_product(
     item: DeleteProductItem,
-    token: dict = Depends(token_jwt)
+    token: TokenJwt = Depends(token_jwt)
 ):
     product = Products.filter(name=item.name)
 

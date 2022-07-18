@@ -42,7 +42,7 @@ class Subcategories(Model):
     The Subcategories model
     """
 
-    name = fields.CharField(20)
+    name = fields.CharField(20, unique=True)
 
     class Meta:
         table = "subcategories"
