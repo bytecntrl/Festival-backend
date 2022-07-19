@@ -43,6 +43,7 @@ class Subcategories(Model):
     """
 
     name = fields.CharField(20, unique=True)
+    order = fields.IntField(unique=True)
 
     class Meta:
         table = "subcategories"

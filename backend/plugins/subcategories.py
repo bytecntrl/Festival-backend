@@ -14,6 +14,7 @@ router = APIRouter(
 
 class AddSubcategoriesItem(BaseModel):
     name: str
+    order: int
 
 
 # admin: add subcategories
@@ -24,7 +25,7 @@ async def add_subcategories(
     token: TokenJwt = Depends(token_jwt)
 ):
     try:
-        await Subcategories(name=item.name).save()
+        await Subcategories(name=item.name, order=item.order).save()
 
         return {"error": False, "message": ""}
     except IntegrityError:
