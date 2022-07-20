@@ -1,13 +1,14 @@
 from .models import (
-    Users, 
-    Ingredients,
-    Subcategories,
-    Products, 
-    ProductIngredient,
-    RoleProduct,
+    Ingredients, 
+    Menu, 
+    MenuProduct, 
     Orders, 
-    ProductsOrders,
-    Menu,
-    RoleMenu,
-    MenuProduct
+    ProductIngredient,
+    Products, 
+    ProductsOrders, 
+    RoleMenu, 
+    RoleProduct,
+    Subcategories, 
+    Users, 
+    Variant
 )

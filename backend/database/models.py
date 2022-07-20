@@ -63,6 +63,19 @@ class Products(Model):
         table = "products"
 
 
+class Variant(Model):
+    """
+    The Variant model
+    """
+
+    name = fields.CharField(20)
+    price = fields.FloatField()
+    product = fields.ForeignKeyField("models.Products")
+
+    class Meta:
+        table ="variant"
+
+
 class ProductIngredient(Model):
     """
     The ProductIngredient model

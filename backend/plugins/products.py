@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -6,7 +6,7 @@ from schema import Schema
 from tortoise.exceptions import IntegrityError
 
 from ..config import config
-from ..database import Products, RoleProduct, Subcategories
+from ..database import Products, RoleProduct, Subcategories, Variant
 from ..utils import (
     Category, 
     TokenJwt, 
@@ -24,6 +24,7 @@ router = APIRouter(
 
 
 SCHEMA_ROLE = Schema(config.conf.ROLES)
+SCHEMA_VARIANT = Schema([{"name": str, "price": float}])
 
 
 # all: get all products
@@ -46,6 +47,10 @@ class AddProductItem(BaseModel):
     category: Category
     subcategory: str
     roles: List[str]
+    variant: List[Dict[str, Union[str, float]]]
+
+    class Config:
+        smart_union = True
 
 
 # admin: add product
@@ -68,7 +73,12 @@ async def add_product(
     if not SCHEMA_ROLE.is_valid(item.roles):
         raise UnicornException(
             status=400,
-            message="Wrong roles"
+            message="Wrong roles schema"
+        )
+    if not SCHEMA_VARIANT.is_valid(item.variant):
+        raise UnicornException(
+            status=400,
+            message="Wrong variant schema"
         )
 
     try:
@@ -88,6 +98,9 @@ async def add_product(
 
         for x in item.roles:
             await RoleProduct(role=x, product=p).save()
+
+        for y in item.variant:
+            await Variant(name=y["name"], price=y["price"], product=p).save()
 
         return {
             "error": False,
