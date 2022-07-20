@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends
@@ -32,12 +33,24 @@ SCHEMA_VARIANT = Schema([{"name": str, "price": float}])
 async def get_products(
     token: TokenJwt = Depends(refresh_token)
 ):
+    product = {
+        "foods": defaultdict(dict),
+        "drinks": defaultdict(dict)
+    }
+
     p = await Products.all().values()
+
+    for x in p:
+        category = await Subcategories.get(id=x["subcategory_id"])
+        product[x["category"]][category.name] = x
 
     return {
         "error": False,
         "message": "",
-        "products": p
+        "products": {
+            k: dict(v)
+            for k, v in product.items()
+        }
     }
 
 
