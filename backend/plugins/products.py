@@ -113,18 +113,110 @@ async def add_product(
         )
 
 
-class DeleteProductItem(BaseModel):
+class AddRoleProductItem(BaseModel):
+    role: str
+
+
+# admin: add role to product
+@router.post("/{product_id}/role")
+@roles("admin")
+async def add_role_product(
+    product_id: int,
+    item: AddRoleProductItem,
+    token: TokenJwt = Depends(token_jwt)
+):
+    if item.role not in config.conf.ROLES:
+        raise UnicornException(
+            status=400,
+            message="Wrong roles"
+        )
+
+    p = await Products.get_or_none(id=product_id)
+
+    if not p:
+        raise UnicornException(
+            status=400,
+            message="not existing product"
+        )
+    
+    f = await RoleProduct.get_or_create(role=item.role, product=p)
+    if not f[1]:
+        raise UnicornException(
+            status=400,
+            message="existing role"
+        )
+
+    return {"error": False, "messsage": ""}
+
+
+class AddVariantProductItem(BaseModel):
     name: str
+    price: float
+
+
+# admin: add variant to product
+@router.post("/{product_id}/variant")
+@roles("admin")
+async def add_variant_product(
+    product_id: int,
+    item: AddVariantProductItem,
+    token: TokenJwt = Depends(token_jwt)
+):
+    p = await Products.get_or_none(id=product_id)
+
+    if not p:
+        raise UnicornException(
+            status=400,
+            message="not existing product"
+        )
+    
+    f = await Variant.get_or_create(
+        name=item.name, 
+        price=item.price, 
+        product=p
+    )
+    if not f[1]:
+        raise UnicornException(
+            status=400,
+            message="existing variant"
+        )
+
+    return {"error": False, "messsage": ""}
+
+
+class ChangePriceProductItem(BaseModel):
+    price: float
+
+
+# admin: change price product 
+@router.put("/{product_id}")
+@roles("admin")
+async def change_price_product(
+    product_id: int,
+    item: ChangePriceProductItem,
+    token: TokenJwt = Depends(token_jwt)
+):
+    p = Products.filter(id=product_id)
+
+    if not await p.exists():
+        raise UnicornException(
+            status=400,
+            message="not existing product"
+        )
+    
+    await p.update(price=item.price)
+
+    return {"error": False, "message": ""}
 
 
 # admin: delete product
-@router.delete("/")
+@router.delete("/{product_id}")
 @roles("admin")
 async def delete_product(
-    item: DeleteProductItem,
+    product_id: int,
     token: TokenJwt = Depends(token_jwt)
 ):
-    product = Products.filter(name=item.name)
+    product = Products.filter(id=product_id)
 
     if not await product.exists():
         raise UnicornException(
@@ -134,7 +226,70 @@ async def delete_product(
     
     await product.delete()
 
-    return {
-        "error": False,
-        "message": ""
-    }
+    return {"error": False, "message": ""}
+
+
+class DeleteRoleProductItem(BaseModel):
+    role: str
+
+
+# admin: delete role from a product
+@router.delete("/{product_id}/role")
+@roles("admin")
+async def delete_role_product(
+    product_id: int,
+    item: DeleteRoleProductItem,
+    token: TokenJwt = Depends(token_jwt)
+):
+    p = await Products.get_or_none(id=product_id)
+
+    if not p:
+        raise UnicornException(
+            status=404,
+            message="product not exist"
+        )
+
+    r = RoleProduct.filter(role=item.role, product=p)
+
+    if not await r.exists():
+        raise UnicornException(
+            status=404,
+            message="role not exist"
+        )
+    
+    await r.delete()
+
+    return {"error": False, "message": ""}
+
+
+class DeleteVariantProductItem(BaseModel):
+    name: str
+
+
+# admin: delete variant from a product
+@router.delete("/{product_id}/variant")
+@roles("admin")
+async def delete_role_product(
+    product_id: int,
+    item: DeleteVariantProductItem,
+    token: TokenJwt = Depends(token_jwt)
+):
+    p = await Products.get_or_none(id=product_id)
+
+    if not p:
+        raise UnicornException(
+            status=404,
+            message="product not exist"
+        )
+
+    v = Variant.filter(name=item.name, product=p)
+
+    if not await v.exists():
+        raise UnicornException(
+            status=404,
+            message="variant not exist"
+        )
+    
+    await v.delete()
+
+    return {"error": False, "message": ""}
