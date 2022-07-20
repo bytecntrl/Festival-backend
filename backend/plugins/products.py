@@ -42,13 +42,18 @@ async def get_products(
 
     for x in p:
         category = await Subcategories.get(id=x["subcategory_id"])
-        product[x["category"]][category.name] = x
+        c = product[x["category"]][category.name]
+
+        if "order" not in c:
+            c["order"] = category.order
+            c["product"] = []
+        c["product"].append(x)
 
     return {
         "error": False,
         "message": "",
         "products": {
-            k: dict(v)
+            k: dict(sorted(v.items(), key=lambda i: i[1]["order"]))
             for k, v in product.items()
         }
     }
