@@ -1,4 +1,5 @@
 from collections import defaultdict
+from operator import itemgetter
 from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends
@@ -39,7 +40,7 @@ async def get_products(
     }
 
     category = await Subcategories.all().values()
-    category = sorted(category, key=lambda i: i["order"])
+    category = sorted(category, key=itemgetter("order"))
 
     for x in category:
         p = await Products.filter(subcategory_id=x["id"]).values()
@@ -58,6 +59,37 @@ async def get_products(
             for k, v in product.items()
         }
     }
+
+
+# all: get a product
+@router.get("/{product_id}")
+async def get_product(
+    product_id: int,
+    token: TokenJwt = Depends(refresh_token)
+):
+    p = Products.filter(id=product_id)
+
+    if not await p.exists():
+        raise UnicornException(
+            status=400,
+            message="product nonexistent"
+        )
+    
+    p = (await p.values())[0]
+
+    if token.role != "admin":
+        r = await RoleProduct.get_or_none(role=token.role, product_id=p["id"])
+        if not r:
+            raise UnicornException(
+                status=401,
+                message="not allowed"
+            )
+    else:
+        p["roles"] = await RoleProduct.filter(product_id=p["id"]).values()
+    
+    p["variant"] = await Variant.filter(product_id=p["id"]).values()
+
+    return {"error": False, "message": "", "product": p}
 
 
 class AddProductItem(BaseModel):
@@ -248,16 +280,12 @@ async def delete_product(
     return {"error": False, "message": ""}
 
 
-class DeleteRoleProductItem(BaseModel):
-    role: str
-
-
 # admin: delete role from a product
-@router.delete("/{product_id}/role")
+@router.delete("/{product_id}/role/{role}")
 @roles("admin")
 async def delete_role_product(
     product_id: int,
-    item: DeleteRoleProductItem,
+    role: str,
     token: TokenJwt = Depends(token_jwt)
 ):
     p = await Products.get_or_none(id=product_id)
@@ -268,7 +296,7 @@ async def delete_role_product(
             message="product not exist"
         )
 
-    r = RoleProduct.filter(role=item.role, product=p)
+    r = RoleProduct.filter(role=role, product=p)
 
     if not await r.exists():
         raise UnicornException(
@@ -281,16 +309,12 @@ async def delete_role_product(
     return {"error": False, "message": ""}
 
 
-class DeleteVariantProductItem(BaseModel):
-    name: str
-
-
 # admin: delete variant from a product
-@router.delete("/{product_id}/variant")
+@router.delete("/{product_id}/variant/{name}")
 @roles("admin")
 async def delete_role_product(
     product_id: int,
-    item: DeleteVariantProductItem,
+    name: str,
     token: TokenJwt = Depends(token_jwt)
 ):
     p = await Products.get_or_none(id=product_id)
@@ -301,7 +325,7 @@ async def delete_role_product(
             message="product not exist"
         )
 
-    v = Variant.filter(name=item.name, product=p)
+    v = Variant.filter(name=name, product=p)
 
     if not await v.exists():
         raise UnicornException(
