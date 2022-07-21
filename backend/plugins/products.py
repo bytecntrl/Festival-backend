@@ -34,26 +34,27 @@ async def get_products(
     token: TokenJwt = Depends(refresh_token)
 ):
     product = {
-        "foods": defaultdict(dict),
-        "drinks": defaultdict(dict)
+        "foods": defaultdict(list),
+        "drinks": defaultdict(list)
     }
 
-    p = await Products.all().values()
+    category = await Subcategories.all().values()
+    category = sorted(category, key=lambda i: i["order"])
 
-    for x in p:
-        category = await Subcategories.get(id=x["subcategory_id"])
-        c = product[x["category"]][category.name]
-
-        if "order" not in c:
-            c["order"] = category.order
-            c["product"] = []
-        c["product"].append(x)
+    for x in category:
+        p = await Products.filter(subcategory_id=x["id"]).values()
+        for y in p:
+            if token.role != "admin":
+                r = RoleProduct.filter(role=token.role, product_id=y["id"])
+                if not await r.exists():
+                    continue
+            product[y["category"]][x["name"]].append(y)
 
     return {
         "error": False,
         "message": "",
         "products": {
-            k: dict(sorted(v.items(), key=lambda i: i[1]["order"]))
+            k: dict(v)
             for k, v in product.items()
         }
     }
