@@ -59,3 +59,39 @@ async def add_ingredient(
         await ProductIngredient(product=p, ingredient=i).save()
 
     return {"error": False, "message": ""}
+
+
+class AddIngredientProductItem(BaseModel):
+    product: str
+
+
+# admin: add product to ingredient
+@router.post("/{ingredient_id}")
+@roles("admin")
+async def add_ingredient_product(
+    ingredient_id: int,
+    item: AddIngredientProductItem,
+    token: TokenJwt = Depends(token_jwt)
+):
+    i = await Ingredients.get_or_none(id=ingredient_id)
+    if not i:
+        raise UnicornException(
+            status=400,
+            message="Wrong ingredient id"
+        )
+    
+    p = await Products.get_or_none(name=item.product)
+    if not p:
+        raise UnicornException(
+            status=400,
+            message="Wrong product"
+        )
+
+    pi = await ProductIngredient.get_or_create(product=p, ingredient=i)
+    if not pi[1]:
+        raise UnicornException(
+            status=400,
+            message="existing product in ingredient"
+        )
+
+    return {"error": False, "message": ""}

@@ -61,6 +61,14 @@ async def get_products(
     }
 
 
+# all: get list of product
+@router.get("/list")
+async def get_list_product(
+    token: TokenJwt = Depends(refresh_token)
+):
+    return [x["name"] for x in await Products.all().values()]
+
+
 # all: get a product
 @router.get("/{product_id}")
 async def get_product(
