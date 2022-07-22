@@ -30,8 +30,9 @@ class Ingredients(Model):
     The Ingredients model
     """
 
-    name = fields.CharField(20, unique=True)
+    name = fields.CharField(20)
     price = fields.FloatField()
+    product = fields.ForeignKeyField("models.Products")
 
     class Meta:
         table = "ingredients"
@@ -74,18 +75,6 @@ class Variant(Model):
 
     class Meta:
         table ="variant"
-
-
-class ProductIngredient(Model):
-    """
-    The ProductIngredient model
-    """
-
-    product = fields.ForeignKeyField("models.Products")
-    ingredient = fields.ForeignKeyField("models.Ingredients")
-
-    class Meta:
-        table = "product_ingredient"
 
 
 class RoleProduct(Model):

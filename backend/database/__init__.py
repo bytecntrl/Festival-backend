@@ -3,7 +3,6 @@ from .models import (
     Menu, 
     MenuProduct, 
     Orders, 
-    ProductIngredient,
     Products, 
     ProductsOrders, 
     RoleMenu, 

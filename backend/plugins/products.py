@@ -8,7 +8,13 @@ from schema import Schema
 from tortoise.exceptions import IntegrityError
 
 from ..config import config
-from ..database import Products, RoleProduct, Subcategories, Variant
+from ..database import (
+    Ingredients, 
+    Products, 
+    RoleProduct, 
+    Subcategories,
+    Variant
+)
 from ..utils import (
     Category, 
     TokenJwt, 
@@ -26,7 +32,7 @@ router = APIRouter(
 
 
 SCHEMA_ROLE = Schema(config.conf.ROLES)
-SCHEMA_VARIANT = Schema([{"name": str, "price": float}])
+SCHEMA_VARIANT_INGREDIENT = Schema([{"name": str, "price": float}])
 
 
 # all: get all products
@@ -96,6 +102,7 @@ async def get_product(
         p["roles"] = await RoleProduct.filter(product_id=p["id"]).values()
     
     p["variant"] = await Variant.filter(product_id=p["id"]).values()
+    p["ingredient"] = await Ingredients.filter(product_id=p["id"]).values()
 
     return {"error": False, "message": "", "product": p}
 
@@ -107,6 +114,7 @@ class AddProductItem(BaseModel):
     subcategory: str
     roles: List[str]
     variant: List[Dict[str, Union[str, float]]]
+    ingredients: List[Dict[str, Union[str, float]]]
 
     class Config:
         smart_union = True
@@ -134,10 +142,15 @@ async def add_product(
             status=400,
             message="Wrong roles schema"
         )
-    if not SCHEMA_VARIANT.is_valid(item.variant):
+    if not SCHEMA_VARIANT_INGREDIENT.is_valid(item.variant):
         raise UnicornException(
             status=400,
             message="Wrong variant schema"
+        )
+    if not SCHEMA_VARIANT_INGREDIENT.is_valid(item.ingredients):
+        raise UnicornException(
+            status=400,
+            message="Wrong ingredients schema"
         )
 
     try:
@@ -160,11 +173,16 @@ async def add_product(
 
         for y in item.variant:
             await Variant(name=y["name"], price=y["price"], product=p).save()
+        
+        for z in item.ingredients:
+            await Ingredients(
+                name=z["name"], 
+                price=z["price"], 
+                product=p
+            ).save()
 
-        return {
-            "error": False,
-            "message": ""
-        }
+        return {"error": False, "message": ""}
+
     except IntegrityError:
         raise UnicornException(
             status=400,
@@ -238,6 +256,41 @@ async def add_variant_product(
         raise UnicornException(
             status=400,
             message="existing variant"
+        )
+
+    return {"error": False, "messsage": ""}
+
+
+class AddIngredientProductItem(BaseModel):
+    name: str
+    price: float
+
+
+# admin: add ingredient to product
+@router.post("/{product_id}/ingredient")
+@roles("admin")
+async def add_variant_product(
+    product_id: int,
+    item: AddIngredientProductItem,
+    token: TokenJwt = Depends(token_jwt)
+):
+    p = await Products.get_or_none(id=product_id)
+
+    if not p:
+        raise UnicornException(
+            status=400,
+            message="not existing product"
+        )
+    
+    f = await Ingredients.get_or_create(
+        name=item.name, 
+        price=item.price, 
+        product=p
+    )
+    if not f[1]:
+        raise UnicornException(
+            status=400,
+            message="existing ingredient"
         )
 
     return {"error": False, "messsage": ""}
@@ -339,6 +392,35 @@ async def delete_role_product(
         raise UnicornException(
             status=404,
             message="variant not exist"
+        )
+    
+    await v.delete()
+
+    return {"error": False, "message": ""}
+
+
+# admin: delete ingredient from a product
+@router.delete("/{product_id}/ingredient/{name}")
+@roles("admin")
+async def delete_role_product(
+    product_id: int,
+    name: str,
+    token: TokenJwt = Depends(token_jwt)
+):
+    p = await Products.get_or_none(id=product_id)
+
+    if not p:
+        raise UnicornException(
+            status=404,
+            message="product not exist"
+        )
+
+    v = Ingredients.filter(name=name, product=p)
+
+    if not await v.exists():
+        raise UnicornException(
+            status=404,
+            message="ingredient not exist"
         )
     
     await v.delete()

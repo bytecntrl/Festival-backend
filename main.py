@@ -25,7 +25,6 @@ app = FastAPI()
 
 # plugins
 from backend.plugins import auth
-from backend.plugins import ingredients
 from backend.plugins import menu
 from backend.plugins import orders
 from backend.plugins import products
@@ -33,7 +32,6 @@ from backend.plugins import subcategories
 from backend.plugins import users
 
 app.include_router(auth.router)
-app.include_router(ingredients.router)
 app.include_router(menu.router)
 app.include_router(orders.router)
 app.include_router(products.router)
