@@ -9,7 +9,8 @@ from ..config import config
 from ..database import Menu, MenuProduct, Products, RoleMenu
 from ..utils import (
     TokenJwt, 
-    UnicornException,
+    UnicornException, 
+    remove_equal_dictionaries,
     roles, 
     token_jwt
 )
@@ -38,7 +39,7 @@ async def exist_products(products: List[str]) -> bool:
 class AddMenuItem(BaseModel):
     name: str
     products: List[Dict[str, Union[str, bool]]]
-    roles: List[str] = []
+    roles: List[str]
 
     class Config:
         smart_union = True
@@ -51,6 +52,8 @@ async def add_menu(
     item: AddMenuItem,
     token: TokenJwt = Depends(token_jwt)
 ):
+    products = remove_equal_dictionaries(item.products)
+
     if not item.name:
         raise UnicornException(
             status=400,
@@ -75,17 +78,11 @@ async def add_menu(
     try:
         menu = await Menu.create(name=item.name)
 
-        for x in item.roles:
+        for x in list(set(item.roles)):
             await RoleMenu(role=x, menu=menu).save()
 
-        for y in item.products:
+        for y in products:
             p = await Products.get(name=y["product"])
-
-            if await MenuProduct.filter(menu=menu, product=p).exists():
-                raise UnicornException(
-                    status=400,
-                    message="Product already exists"
-                )
 
             await MenuProduct(
                 menu=menu, 
