@@ -18,8 +18,9 @@ from ..database import (
 from ..utils import (
     Category, 
     TokenJwt, 
-    UnicornException,
-    refresh_token, 
+    UnicornException, 
+    refresh_token,
+    remove_equal_dictionaries, 
     roles, 
     token_jwt
 )
@@ -153,6 +154,9 @@ async def add_product(
             message="Wrong ingredients schema"
         )
 
+    variant = remove_equal_dictionaries(item.variant, "name")
+    ingredients = remove_equal_dictionaries(item.ingredients, "name")
+
     try:
         s = await Subcategories.get_or_none(name=item.subcategory)
         if not s:
@@ -168,13 +172,13 @@ async def add_product(
             subcategory=s
         )
 
-        for x in item.roles:
+        for x in list(set(item.roles)):
             await RoleProduct(role=x, product=p).save()
 
-        for y in item.variant:
+        for y in variant:
             await Variant(name=y["name"], price=y["price"], product=p).save()
         
-        for z in item.ingredients:
+        for z in ingredients:
             await Ingredients(
                 name=z["name"], 
                 price=z["price"], 
