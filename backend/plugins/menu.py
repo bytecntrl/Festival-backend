@@ -52,8 +52,6 @@ async def add_menu(
     item: AddMenuItem,
     token: TokenJwt = Depends(token_jwt)
 ):
-    products = remove_equal_dictionaries(item.products)
-
     if not item.name:
         raise UnicornException(
             status=400,
@@ -74,6 +72,8 @@ async def add_menu(
             status=400,
             message="Product not exist"
         )
+
+    products = remove_equal_dictionaries(item.products)
     
     try:
         menu = await Menu.create(name=item.name)
@@ -99,19 +99,19 @@ async def add_menu(
 
 
 class AddProductItem(BaseModel):
-    menu_id: int
     product: str
     optional: bool
 
 
 # admin: add product
-@router.put("/product")
+@router.put("/{menu_id}/product")
 @roles("admin")
 async def add_product(
+    menu_id: int,
     item: AddProductItem,
     token: TokenJwt = Depends(token_jwt)
 ):
-    menu = await Menu.get_or_none(id=item.menu_id)
+    menu = await Menu.get_or_none(id=menu_id)
     if not menu:
         raise UnicornException(
             status=400,

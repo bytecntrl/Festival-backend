@@ -3,12 +3,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from ..database import Users
-from ..utils import (
-    roles, 
-    token_jwt,
-    refresh_token, 
-    UnicornException
-)
+from ..utils import TokenJwt, UnicornException, refresh_token, roles, token_jwt
 
 
 router = APIRouter(
@@ -21,7 +16,7 @@ router = APIRouter(
 @router.get("/")
 @roles("admin")
 async def get_users(
-    token: dict = Depends(refresh_token)
+    token: TokenJwt = Depends(refresh_token)
 ):
     users = Users.all()
     us = users.exclude(username=token.username)
@@ -37,7 +32,7 @@ async def get_users(
 @router.get("/{username}")
 async def get_user_admin(
     username: str,
-    token: dict = Depends(refresh_token)
+    token: TokenJwt = Depends(refresh_token)
 ):
     user = await Users.get_or_none(username=username)
 
@@ -73,7 +68,7 @@ class ChangePasswordItem(BaseModel):
 @router.put("/")
 async def change_password(
     item: ChangePasswordItem,
-    token: dict = Depends(token_jwt)
+    token: TokenJwt = Depends(token_jwt)
 ):
     ph = PasswordHasher()
 
@@ -96,7 +91,7 @@ class DeleteUserItem(BaseModel):
 @roles("admin")
 async def delete_user(
     item: DeleteUserItem,
-    token: dict = Depends(token_jwt)
+    token: TokenJwt = Depends(token_jwt)
 ):
     user = Users.filter(username=item.username)
 

@@ -1,20 +1,20 @@
 from datetime import datetime, timedelta, timezone
 
-from argon2 import PasswordHasher
-from fastapi import APIRouter, Depends
-from argon2.exceptions import (
-    VerificationError,
-    VerifyMismatchError,
-    HashingError,
-    InvalidHash
-)
 import jwt
+from argon2 import PasswordHasher
+from argon2.exceptions import (
+    HashingError, 
+    InvalidHash, 
+    VerificationError,
+    VerifyMismatchError
+)
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError
 
 from ..config import config
 from ..database import Users
-from ..utils import UnicornException, token_jwt, refresh_token, roles
+from ..utils import TokenJwt, UnicornException, refresh_token, roles, token_jwt
 
 
 router = APIRouter(
@@ -91,7 +91,7 @@ class RegisterItem(BaseModel):
 @roles("admin")
 async def register(
     item: RegisterItem,
-    token: dict = Depends(token_jwt)
+    token: TokenJwt = Depends(token_jwt)
 ):
     if item.role not in config.conf.ROLES:
         raise UnicornException(
@@ -127,7 +127,7 @@ class TokenItem(BaseModel):
 @router.post("/token")
 async def new_token(
     item: TokenItem,
-    token: dict = Depends(refresh_token)
+    token: TokenJwt = Depends(refresh_token)
 ):
     user = await Users.get(username=token.username)
 

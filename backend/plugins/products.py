@@ -377,7 +377,7 @@ async def delete_role_product(
 # admin: delete variant from a product
 @router.delete("/{product_id}/variant/{name}")
 @roles("admin")
-async def delete_role_product(
+async def delete_variant_product(
     product_id: int,
     name: str,
     token: TokenJwt = Depends(token_jwt)
@@ -406,7 +406,7 @@ async def delete_role_product(
 # admin: delete ingredient from a product
 @router.delete("/{product_id}/ingredient/{name}")
 @roles("admin")
-async def delete_role_product(
+async def delete_ingredient_product(
     product_id: int,
     name: str,
     token: TokenJwt = Depends(token_jwt)
