@@ -20,7 +20,7 @@ async def get_users(
     token: TokenJwt = Depends(refresh_token)
 ):
     users = Users.all().exclude(username=token.username)
-    lst = await users.offset((page-1)*14).limit(14).values(
+    lst = await users.offset((page-1)*10).limit(10).values(
         "id", 
         "username", 
         "role"
