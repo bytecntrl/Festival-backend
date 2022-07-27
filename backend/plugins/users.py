@@ -16,10 +16,15 @@ router = APIRouter(
 @router.get("/")
 @roles("admin")
 async def get_users(
+    page: int,
     token: TokenJwt = Depends(refresh_token)
 ):
     users = Users.all().exclude(username=token.username)
-    lst = await users.offset(14).values("id", "username", "role")
+    lst = await users.offset((page-1)*14).limit(14).values(
+        "id", 
+        "username", 
+        "role"
+    )
 
     return {
         "error": False,
