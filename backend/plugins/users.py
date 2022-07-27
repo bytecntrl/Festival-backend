@@ -18,13 +18,13 @@ router = APIRouter(
 async def get_users(
     token: TokenJwt = Depends(refresh_token)
 ):
-    users = Users.all()
-    us = users.exclude(username=token.username)
+    users = Users.all().exclude(username=token.username)
+    lst = await users.values("id", "username", "role")
 
     return {
         "error": False,
         "message": "",
-        "users": await us.values("id", "username", "role")
+        "users": [lst[x:x+14] for x in range(0, len(lst), 14)]
     }
 
 
