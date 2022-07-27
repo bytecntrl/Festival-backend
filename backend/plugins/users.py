@@ -82,18 +82,14 @@ async def change_password(
     }
 
 
-class DeleteUserItem(BaseModel):
-    username: str
-
-
 # admin: delete user
-@router.delete("/")
+@router.delete("/{user_id}")
 @roles("admin")
 async def delete_user(
-    item: DeleteUserItem,
+    user_id: int,
     token: TokenJwt = Depends(token_jwt)
 ):
-    user = Users.filter(username=item.username)
+    user = Users.filter(id=user_id)
 
     if not await user.exists():
         raise UnicornException(
