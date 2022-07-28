@@ -54,7 +54,7 @@ async def get_user_admin(
         )
     ):
         raise UnicornException(
-            status=405,
+            status=403,
             message="not allowed"
         )
 

@@ -47,7 +47,7 @@ async def token_jwt(
         IndexError
     ):
         raise UnicornException(
-            status=404, 
+            status=401, 
             message="JWT Error!"
         )
 
@@ -83,6 +83,6 @@ async def refresh_token(
         IndexError
     ):
         raise UnicornException(
-            status=404, 
+            status=401, 
             message="Refresh JWT Error!"
         )
