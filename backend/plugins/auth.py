@@ -139,7 +139,8 @@ async def new_token(
             {
                 "exp": datetime.now(tz=timezone.utc)+timedelta(seconds=60*15),
                 "username": token.username,
-                "role": user.role
+                "role": user.role,
+                "type": "access"
             }, 
             config.conf.JWT_SECRET,
             algorithm="HS256"
