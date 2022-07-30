@@ -51,6 +51,7 @@ async def add_subcategory(
 
 #admin: delete category
 @router.delete("/{subcatery_id}")
+@roles("admin")
 async def delete_subcategory(
     subcategory_id: int,
     token: TokenJwt = Depends(token_jwt)
