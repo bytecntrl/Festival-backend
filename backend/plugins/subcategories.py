@@ -50,7 +50,7 @@ async def add_subcategory(
 
 
 #admin: delete category
-@router.delete("/{subcatery_id}")
+@router.delete("/{subcategory_id}")
 @roles("admin")
 async def delete_subcategory(
     subcategory_id: int,
