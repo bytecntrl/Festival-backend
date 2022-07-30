@@ -94,15 +94,21 @@ async def delete_user(
     user_id: int,
     token: TokenJwt = Depends(token_jwt)
 ):
-    user = Users.filter(id=user_id)
+    user = await Users.get_or_none(id=user_id)
 
-    if not await user.exists():
+    if not user:
         raise UnicornException(
             status=404,
             message="user not exist"
         )
+    
+    if user.role == "admin":
+        raise UnicornException(
+            status=403,
+            message="you cannot delete an admin"
+        )
 
-    await user.delete()
+    await Users.filter(id=user_id).delete()
 
     return {
         "error": False,

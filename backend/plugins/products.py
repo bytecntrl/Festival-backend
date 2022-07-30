@@ -96,7 +96,7 @@ async def get_product(
         r = await RoleProduct.get_or_none(role=token.role, product_id=p["id"])
         if not r:
             raise UnicornException(
-                status=401,
+                status=403,
                 message="not allowed"
             )
     else:
