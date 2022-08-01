@@ -1,5 +1,4 @@
 from collections import defaultdict
-from operator import itemgetter
 from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends
@@ -41,30 +40,23 @@ SCHEMA_VARIANT_INGREDIENT = Schema([{"name": str, "price": float}])
 async def get_products(
     token: TokenJwt = Depends(refresh_token)
 ):
-    product = {
-        "foods": defaultdict(list),
-        "drinks": defaultdict(list)
-    }
+    products = defaultdict(list)
 
-    category = await Subcategories.all().values()
-    category = sorted(category, key=itemgetter("order"))
+    categories = await Subcategories.all().order_by("order").values()
 
-    for x in category:
-        p = await Products.filter(subcategory_id=x["id"]).values()
+    for category in categories:
+        p = await Products.filter(subcategory_id=category["id"]).values()
         for y in p:
             if token.role != "admin":
                 r = RoleProduct.filter(role=token.role, product_id=y["id"])
                 if not await r.exists():
                     continue
-            product[y["category"]][x["name"]].append(y)
+            products[category["name"]].append(y)
 
     return {
         "error": False,
         "message": "",
-        "products": {
-            k: dict(v)
-            for k, v in product.items()
-        }
+        "products": dict(products)
     }
 
 
