@@ -109,9 +109,9 @@ class AddProductItem(BaseModel):
     price: float
     category: Category
     subcategory: str
-    roles: List[str]
-    variant: List[Dict[str, Union[str, float]]]
-    ingredients: List[Dict[str, Union[str, float]]]
+    roles: List[str] = []
+    variant: List[Dict[str, Union[str, float]]] = []
+    ingredients: List[Dict[str, Union[str, float]]] = []
 
     class Config:
         smart_union = True
