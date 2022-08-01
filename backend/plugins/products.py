@@ -65,7 +65,11 @@ async def get_products(
 async def get_list_product(
     token: TokenJwt = Depends(refresh_token)
 ):
-    return [x["name"] for x in await Products.all().values()]
+    return {
+        "error": False,
+        "message": "",
+        "products": [x["name"] for x in await Products.all().values()]
+    }
 
 
 # all: get a product

@@ -26,6 +26,20 @@ async def get_subcategories(
     }
 
 
+# all: get list subcategories
+@router.get("/list")
+async def get_list_subcategories(
+    token: TokenJwt = Depends(refresh_token)
+):
+    categories = [x["name"] for x in await Subcategories.all().values()]
+
+    return {
+        "error": False,
+        "message": "",
+        "categories": categories
+    }
+
+
 class AddSubcategoriesItem(BaseModel):
     name: str
     order: int
