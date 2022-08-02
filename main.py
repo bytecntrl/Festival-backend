@@ -4,14 +4,14 @@ import string
 from argon2 import PasswordHasher
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from tortoise.contrib.fastapi import register_tortoise
 
-from backend.config import config, Config
+from backend.config import Config, config
 from backend.database import Users
 from backend.utils import UnicornException
-
 
 # env 
 load_dotenv()
@@ -24,13 +24,22 @@ config.conf = Config()
 app = FastAPI()
 
 
+# CORS
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # plugins
-from backend.plugins import auth
-from backend.plugins import menu
-from backend.plugins import orders
-from backend.plugins import products
-from backend.plugins import subcategories
-from backend.plugins import users
+from backend.plugins import auth, menu, orders, products, subcategories, users
 
 app.include_router(auth.router)
 app.include_router(menu.router)
