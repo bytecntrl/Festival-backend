@@ -251,16 +251,17 @@ async def add_variant_product(
             message="not existing product"
         )
     
-    f = await Variant.get_or_create(
-        name=item.name, 
-        price=item.price, 
+    f = await Variant.get_or_none(
+        name=item.name,
         product=p
     )
-    if not f[1]:
+    if f:
         raise UnicornException(
             status=400,
             message="existing variant"
         )
+
+    await Variant(name=item.name, price=item.price, product=p).save()
 
     return {"error": False, "messsage": ""}
 
