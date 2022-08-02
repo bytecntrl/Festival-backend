@@ -243,6 +243,16 @@ async def add_variant_product(
     item: AddVariantProductItem,
     token: TokenJwt = Depends(token_jwt)
 ):
+    if not item.name:
+        raise UnicornException(
+            status=404,
+            message="Wrong name"
+        )
+    if item.price < 0:
+        raise UnicornException(
+            status=404,
+            message="Wrong price"
+        )
     p = await Products.get_or_none(id=product_id)
 
     if not p:
@@ -279,6 +289,16 @@ async def add_variant_product(
     item: AddIngredientProductItem,
     token: TokenJwt = Depends(token_jwt)
 ):
+    if not item.name:
+        raise UnicornException(
+            status=404,
+            message="Wrong name"
+        )
+    if item.price < 0:
+        raise UnicornException(
+            status=404,
+            message="Wrong price"
+        )
     p = await Products.get_or_none(id=product_id)
 
     if not p:
@@ -287,16 +307,17 @@ async def add_variant_product(
             message="not existing product"
         )
     
-    f = await Ingredients.get_or_create(
+    f = await Ingredients.get_or_none(
         name=item.name, 
-        price=item.price, 
         product=p
     )
-    if not f[1]:
+    if f:
         raise UnicornException(
             status=400,
             message="existing ingredient"
         )
+
+    await Ingredients(name=item.name, price=item.price, product=p).save()
 
     return {"error": False, "messsage": ""}
 
