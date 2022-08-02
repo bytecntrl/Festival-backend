@@ -130,27 +130,27 @@ async def add_product(
 ):
     if not item.name:
         raise UnicornException(
-            status=400,
+            status=406,
             message="Wrong name"
         )
     if item.price <= 0:
         raise UnicornException(
-            status=400,
+            status=406,
             message="Wrong price"
         )
     if not SCHEMA_ROLE.is_valid(item.roles):
         raise UnicornException(
-            status=400,
+            status=406,
             message="Wrong roles schema"
         )
     if not SCHEMA_VARIANT_INGREDIENT.is_valid(item.variant):
         raise UnicornException(
-            status=400,
+            status=406,
             message="Wrong variant schema"
         )
     if not SCHEMA_VARIANT_INGREDIENT.is_valid(item.ingredients):
         raise UnicornException(
-            status=400,
+            status=406,
             message="Wrong ingredients schema"
         )
 
@@ -161,7 +161,7 @@ async def add_product(
         s = await Subcategories.get_or_none(name=item.subcategory)
         if not s:
             raise UnicornException(
-                status=400,
+                status=406,
                 message="subcategory nonexistent"
             )
 
@@ -189,7 +189,7 @@ async def add_product(
 
     except IntegrityError:
         raise UnicornException(
-            status=400,
+            status=406,
             message="existing product"
         )
 
@@ -208,7 +208,7 @@ async def add_role_product(
 ):
     if item.role not in config.conf.ROLES:
         raise UnicornException(
-            status=400,
+            status=406,
             message="Wrong roles"
         )
 
@@ -245,12 +245,12 @@ async def add_variant_product(
 ):
     if not item.name:
         raise UnicornException(
-            status=404,
+            status=406,
             message="Wrong name"
         )
     if item.price < 0:
         raise UnicornException(
-            status=404,
+            status=406,
             message="Wrong price"
         )
     p = await Products.get_or_none(id=product_id)
@@ -291,19 +291,19 @@ async def add_variant_product(
 ):
     if not item.name:
         raise UnicornException(
-            status=404,
+            status=406,
             message="Wrong name"
         )
     if item.price < 0:
         raise UnicornException(
-            status=404,
+            status=406,
             message="Wrong price"
         )
     p = await Products.get_or_none(id=product_id)
 
     if not p:
         raise UnicornException(
-            status=400,
+            status=406,
             message="not existing product"
         )
     
@@ -313,7 +313,7 @@ async def add_variant_product(
     )
     if f:
         raise UnicornException(
-            status=400,
+            status=406,
             message="existing ingredient"
         )
 
@@ -334,6 +334,11 @@ async def change_price_product(
     item: ChangePriceProductItem,
     token: TokenJwt = Depends(token_jwt)
 ):
+    if item.price <= 0:
+        raise UnicornException(
+            status=406,
+            message="Wrong price"
+        )
     p = Products.filter(id=product_id)
 
     if not await p.exists():
