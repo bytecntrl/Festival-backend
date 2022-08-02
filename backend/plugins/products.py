@@ -96,7 +96,11 @@ async def get_product(
                 message="not allowed"
             )
     else:
-        p["roles"] = await RoleProduct.filter(product_id=p["id"]).values()
+        p["roles"] = [
+            x[0] 
+            for x in 
+            await RoleProduct.filter(product_id=p["id"]).values_list("role")
+        ]
     
     p["variant"] = await Variant.filter(product_id=p["id"]).values()
     p["ingredient"] = await Ingredients.filter(product_id=p["id"]).values()
