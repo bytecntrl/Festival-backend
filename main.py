@@ -5,6 +5,7 @@ from argon2 import PasswordHasher
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from tortoise.contrib.fastapi import register_tortoise
 
 from backend.config import config, Config
@@ -76,6 +77,20 @@ async def unicorn_exception_handler(_: Request, exc: UnicornException):
         content={
             "error": True,
             "message": exc.message
+        }
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_: Request, exc: RequestValidationError):
+    detail = exc.errors()
+    message = "Error in: " + ", ".join([x["loc"][1] for x in detail])
+    return JSONResponse(
+        status_code=422, 
+        content={
+            "error": True, 
+            "message": message,
+            "detail": detail
         }
     )
 
