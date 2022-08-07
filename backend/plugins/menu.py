@@ -104,7 +104,7 @@ class AddProductItem(BaseModel):
 
 
 # admin: add product
-@router.put("/{menu_id}/product")
+@router.post("/{menu_id}/product")
 @roles("admin")
 async def add_product(
     menu_id: int,
@@ -138,3 +138,40 @@ async def add_product(
     ).save()
 
     return {"error": False, "message": ""}
+
+
+class AddRoleItem(BaseModel):
+    role: str
+
+
+# admin: add role
+@router.post("/{menu_id}/role")
+@roles("admin")
+async def add_role(
+    menu_id: int,
+    item: AddRoleItem,
+    token: TokenJwt = Depends(token_jwt)
+):
+    if item.role not in config.conf.ROLES:
+        raise UnicornException(
+            status=406,
+            message="Wrong roles"
+        )
+
+    menu = await Menu.get_or_none(id=menu_id)
+
+    if not menu:
+        raise UnicornException(
+            status=406,
+            message="Wrong menu"
+        )
+    
+    role = await RoleMenu.get_or_create(role=item.role, menu=menu)
+
+    if not role[1]:
+        raise UnicornException(
+            status=403,
+            message="existing role"
+        )
+
+    return {"error": False, "messsage": ""}
