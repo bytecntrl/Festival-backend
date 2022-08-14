@@ -1,18 +1,26 @@
+from typing import Dict, Union, List, Any
+from webbrowser import get
+
+from schema import Schema, Optional, And
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from ..config import config
 from ..database import (
     Orders, 
-    Products, 
-    ProductsOrders, 
-    Users
+    Products,
+    Users,
+    Variant,
+    Ingredients,
+    Menu,
+    MenuProduct
 )
 from ..utils import (
     refresh_token, 
     roles, 
     token_jwt,
-    UnicornException
+    UnicornException,
+    TokenJwt
 )
 
 
@@ -22,11 +30,86 @@ router = APIRouter(
 )
 
 
+SCHEMA_INFO = Schema({
+    "client": And(str, lambda n: len(n) > 2),
+    "person": And(int, lambda n: n > 0),
+    "take_away": bool, 
+    "table": And(int, lambda n: n > 0)
+})
+SCHEMA_PRODUCT = Schema([
+    {
+        "id": int, 
+        Optional("variant"): str,
+        Optional("ingredient"): [int],
+        "quantity": int
+    }
+])
+SCHEMA_MENU = Schema([{"id": int, "products": SCHEMA_PRODUCT}])
+
+
+async def check_product(products) -> bool:
+    result = []
+
+    for x in products:
+        product = await Products.filter(id=x["id"]).exists()
+        result.append(product)
+
+        variant = await Variant.filter(
+            name=x["variant"], 
+            product_id=x["id"]
+        ).exists()
+        result.append(variant)
+
+        for y in x["ingredient"]:
+            ingredient = await Ingredients.filter(
+                id=y, 
+                product_id=x["id"]
+            ).exists()
+            result.append(ingredient)
+
+    return all(result)
+
+
+async def check_menu(menus) -> bool:
+    result = []
+
+    for x in menus:
+        menu = await Menu.filter(id=x["id"]).exists()
+        result.append(menu)
+
+        list_product = [
+            z["id"] 
+            for z in await MenuProduct.filter(menu_id=x["id"]).values() 
+            if not z["optional"]
+        ]
+        if not all(
+            z in [y["id"] for y in x["products"]] 
+            for z in list_product
+        ):
+            return False
+
+        for p in x["products"]:
+            product = await MenuProduct.filter(
+                menu_id=x["id"],
+                product=p["id"]
+            ).exists()
+            result.append(product)
+
+        result.append(await check_product(x["products"]))
+    
+    return all(result)
+
+
 class CreateOrdersItem(BaseModel):
-    client: str
-    person: int
-    take_away: bool
-    table: int = 0
+    # {"client": str, "person": int, "take_away": bool, "table": int}
+    info: Dict[str, Union[str, int, bool]]
+    # [{"id": int, "variant": str, "ingredient": [int], "quantity": int}]
+    product: List[Dict[str, Union[int, str, List[int]]]] = []
+    # [{"id": int, "products": product}]
+    menu: List[Dict[str, Union[int, Any]]] = []
+
+    class Config:
+        smart_union = True
 
 
 # roles: create orders
@@ -34,135 +117,47 @@ class CreateOrdersItem(BaseModel):
 @roles(config.conf.ROLES)
 async def create_orders(
     item: CreateOrdersItem,
-    token: dict = Depends(refresh_token)
+    token: TokenJwt = Depends(token_jwt)
 ):
-    if item.person <= 0:
+    if not item.product and not item.menu:
         raise UnicornException(
-            status=400,
-            message="Wrong person"
+            status=406,
+            message="No data"
         )
-
-    if item.table <= 0:
+    if not SCHEMA_INFO.is_valid(item.info):
         raise UnicornException(
-            status=400,
-            message="Wrong table"
+            status=406,
+            message="Wrong info schema"
         )
+    if not SCHEMA_PRODUCT.is_valid(item.product):
+        raise UnicornException(
+            status=406,
+            message="Wrong product schema"
+        )
+    if not SCHEMA_MENU.is_valid(item.menu):
+        raise UnicornException(
+            status=406,
+            message="Wrong menu schema"
+        )
+    if not await check_product(item.product):
+        raise UnicornException(
+            status=406,
+            message="Product not exist"
+        )
+    if not await check_menu(item.menu):
+        raise UnicornException(
+            status=406,
+            message="Menu not exist"
+        )
+    
+    info = item.info
 
-    user = await Users.get(username=token.username)
-
-    p = await Orders.create(
-        client=item.client,
-        person=item.person,
-        take_away=item.take_away,
-        table=item.table,
-        user=user
+    order = await Orders.create(
+        client=info["client"],
+        person=info["person"],
+        take_away=info["take_away"],
+        table=info["table"],
+        user=await Users.get(username=token.username)
     )
 
-    return {
-        "error": False,
-        "message": "",
-        "id": p.id
-    }
-
-
-class AddProductToOrderItem(BaseModel):
-    product: str
-    quantity: int
-
-
-# roles: add product to order
-@router.put("/{order_id}")
-@roles(config.conf.ROLES)
-async def add_product_to_order(
-    order_id: int,
-    item: AddProductToOrderItem,
-    token: dict = Depends(refresh_token)
-):
-    if item.quantity <= 0:
-        raise UnicornException(
-            status=400,
-            message="Wrong quantity"
-        )
-
-    order = await Orders.get_or_none(id=order_id)
-
-    if not order:
-        raise UnicornException(
-            status=400,
-            message="Wrong order_id"
-        )
-    
-    if order.complete:
-        raise UnicornException(
-            status=400,
-            message="Order alredy complete"
-        )
-
-    user = await order.user.values()
-    if user["username"] != token.username:
-        raise UnicornException(
-            status=405,
-            message="not allowed"
-        )
-    
-    product = await Products.get_or_none(name=item.product)
-
-    if not product:
-        raise UnicornException(
-            status=400,
-            message="Wrong product"
-        )
-
-    p = ProductsOrders().filter(product=product, order=order)
-
-    if await p.exists():
-        raise UnicornException(
-            status=400,
-            message="Product alredy exists"
-        )
-
-    await ProductsOrders(
-        product=product,
-        order=order,
-        quantity=item.quantity
-    ).save()
-
-    return {
-        "error": False,
-        "message": ""
-    }
-
-
-@router.put("/{order_id}/save")
-@roles(config.conf.ROLES)
-async def save_order(
-    order_id: int,
-    token: dict = Depends(token_jwt)
-):
-    order = await Orders.get_or_none(id=order_id)
-
-    if not order:
-        raise UnicornException(
-            status=400,
-            message="Wrong order_id"
-        )
-
-    if order.complete:
-        raise UnicornException(
-            status=400,
-            message="Order already completed"
-        )
-    
-    user = await order.user.values()
-    if user["username"] != token.username:
-        raise UnicornException(
-            status=405,
-            message="not allowed"
-        )
-
-    await Orders.filter(id=order_id).update(complete=True)
-
-    return {
-        "error": False,
-        "message": ""
-    }
+    # TODO: to finish

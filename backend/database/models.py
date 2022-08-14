@@ -98,26 +98,49 @@ class Orders(Model):
     person = fields.IntField()
     take_away = fields.BooleanField()
     table = fields.IntField(null=True)
-    complete = fields.BooleanField(default=False, null=True)
     user = fields.ForeignKeyField("models.Users")
 
     class Meta:
         table = "orders"
 
 
-class ProductsOrders(Model):
+class MenuOrder(Model):
     """
-    The ProductsOrders model
+    The MenuOrder model
     """
 
-    menu = fields.ForeignKeyField("models.MenuProduct", null=True)
-    product = fields.ForeignKeyField("models.Products")
+    menu = fields.ForeignKeyField("models.Menu")
     order = fields.ForeignKeyField("models.Orders")
-    ingredient = fields.ForeignKeyField("models.Ingredients", null=True)
-    quantity = fields.IntField()
 
     class Meta:
-        table = "products_orders"
+        table = "menu_order"
+
+
+class ProductOrder(Model):
+    """
+    The ProductOrder model
+    """
+
+    menu = fields.ForeignKeyField("models.MenuOrder", null=True)
+    product = fields.ForeignKeyField("models.Products")
+    variant = fields.ForeignKeyField("models.Variant", null=True)
+    order = fields.ForeignKeyField("models.Orders")
+
+    class Meta:
+        table = "product_order"
+
+
+class IngredientOrder(Model):
+    """
+    The IngredientOrder model
+    """
+
+    ingredient = fields.ForeignKeyField("models.Ingredients")
+    product = fields.ForeignKeyField("models.ProductOrder")
+    order = fields.ForeignKeyField("models.Orders")
+
+    class Meta:
+        table = "ingredient_order"
 
 
 class Menu(Model):
