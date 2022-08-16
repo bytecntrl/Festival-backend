@@ -48,44 +48,43 @@ SCHEMA_MENU = Schema([{"id": int, "products": SCHEMA_PRODUCT}])
 
 
 async def check_product(products) -> bool:
-    result = []
-
     for x in products:
         product = await Products.filter(id=x["id"]).exists()
-        result.append(product)
+        if not product:
+            return False
 
         variant = await Variant.filter(
             name=x["variant"], 
             product_id=x["id"]
         ).exists()
-        result.append(variant)
+        if not variant:
+            return False
 
         for y in x["ingredient"]:
             ingredient = await Ingredients.filter(
                 id=y, 
                 product_id=x["id"]
             ).exists()
-            result.append(ingredient)
+            if not ingredient:
+                return False
 
-    return all(result)
+    return True
 
 
 async def check_menu(menus) -> bool:
-    result = []
-
     for x in menus:
         menu = await Menu.filter(id=x["id"]).exists()
-        result.append(menu)
+        if not menu: 
+            return False
 
         list_product = [
             z["id"] 
             for z in await MenuProduct.filter(menu_id=x["id"]).values() 
             if not z["optional"]
         ]
-        if not all(
-            z in [y["id"] for y in x["products"]] 
-            for z in list_product
-        ):
+        ids_product = [y["id"] for y in x["products"]] 
+
+        if not all(map(lambda z: z in ids_product, list_product)):
             return False
 
         for p in x["products"]:
@@ -93,11 +92,13 @@ async def check_menu(menus) -> bool:
                 menu_id=x["id"],
                 product=p["id"]
             ).exists()
-            result.append(product)
+            if not product:
+                return False
 
-        result.append(await check_product(x["products"]))
+        if not await check_product(x["products"]):
+            return False
     
-    return all(result)
+    return True
 
 
 class CreateOrdersItem(BaseModel):
