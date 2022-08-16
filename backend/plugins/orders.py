@@ -1,5 +1,4 @@
 from typing import Dict, Union, List, Any
-from webbrowser import get
 
 from schema import Schema, Optional, And
 from fastapi import APIRouter, Depends
@@ -13,7 +12,10 @@ from ..database import (
     Variant,
     Ingredients,
     Menu,
-    MenuProduct
+    MenuProduct,
+    ProductOrder,
+    IngredientOrder,
+    MenuOrder
 )
 from ..utils import (
     refresh_token, 
@@ -53,14 +55,15 @@ async def check_product(products) -> bool:
         if not product:
             return False
 
-        variant = await Variant.filter(
-            name=x["variant"], 
-            product_id=x["id"]
-        ).exists()
-        if not variant:
-            return False
+        if x.get("variant"):
+            variant = await Variant.filter(
+                name=x["variant"], 
+                product_id=x["id"]
+            ).exists()
+            if not variant:
+                return False
 
-        for y in x["ingredient"]:
+        for y in x.get("ingredient", []):
             ingredient = await Ingredients.filter(
                 id=y, 
                 product_id=x["id"]
@@ -99,6 +102,30 @@ async def check_menu(menus) -> bool:
             return False
     
     return True
+
+
+async def add_products(products, order, menu=None):
+    for product in products:
+        variant = None
+        if product.get("variant"):
+            variant = await Variant.get(
+                name=product["variant"], 
+                product_id=product["id"]
+            )
+        
+        p = await ProductOrder.create(
+            menu=menu,
+            product=await Products.get(id=product["id"]),
+            variant=variant,
+            order=order
+        )
+
+        for ingredient in product.get("ingredient", []):
+            await IngredientOrder(
+                ingredient_id=ingredient, 
+                product=p, 
+                order=order
+            ).save()
 
 
 class CreateOrdersItem(BaseModel):
@@ -161,4 +188,13 @@ async def create_orders(
         user=await Users.get(username=token.username)
     )
 
-    # TODO: to finish
+    await add_products(item.product, order)
+
+    for menu in item.menu:
+        m = await MenuOrder.create(
+            menu_id=menu["id"],
+            order=order
+        )
+        await add_products(menu["products"], order, m)
+
+    return {"error": False, "message": ""}
