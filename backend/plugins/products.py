@@ -68,7 +68,7 @@ async def get_list_product(
     return {
         "error": False,
         "message": "",
-        "products": [x["name"] for x in await Products.all().values()]
+        "products": [x for x in await Products.all().values("id", "name")]
     }
 
 

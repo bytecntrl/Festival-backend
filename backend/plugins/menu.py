@@ -22,7 +22,7 @@ router = APIRouter(
 )
 
 
-SCHEMA_MENU = Schema([{"product": str, "optional": bool}])
+SCHEMA_MENU = Schema([{"product": int, "optional": bool}])
 SCHEMA_ROLE = Schema(config.conf.ROLES)
 
 
@@ -31,7 +31,7 @@ async def exist_products(products: List[str]) -> bool:
         return False
 
     return all([
-        await Products.filter(name=x["product"]).exists()
+        await Products.filter(id=x["product"]).exists()
         for x in products
     ])
 
@@ -83,7 +83,7 @@ async def get_menu(
 class AddMenuItem(BaseModel):
     name: str
     products: List[Dict[str, Union[str, bool]]]
-    roles: List[str]
+    roles: List[str] = []
 
     class Config:
         smart_union = True
@@ -126,7 +126,7 @@ async def add_menu(
             await RoleMenu(role=x, menu=menu).save()
 
         for y in products:
-            p = await Products.get(name=y["product"])
+            p = await Products.get(id=y["product"])
 
             await MenuProduct(
                 menu=menu, 
