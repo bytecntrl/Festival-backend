@@ -82,7 +82,7 @@ async def get_menu(
 
 class AddMenuItem(BaseModel):
     name: str
-    products: List[Dict[str, Union[str, bool]]]
+    products: List[Dict[str, Union[int, bool]]]
     roles: List[str] = []
 
     class Config:
