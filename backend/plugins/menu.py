@@ -10,11 +10,11 @@ from ..database import Menu, MenuProduct, Products, RoleMenu
 from ..utils import (
     TokenJwt, 
     UnicornException, 
-    remove_equal_dictionaries,
+    refresh_token,
+    remove_equal_dictionaries, 
     roles, 
     token_jwt
 )
-
 
 router = APIRouter(
     prefix="/menu",
@@ -34,6 +34,50 @@ async def exist_products(products: List[str]) -> bool:
         await Products.filter(name=x["product"]).exists()
         for x in products
     ])
+
+
+# all: get menu
+@router.get("/")
+async def get_menus(
+    token: TokenJwt = Depends(refresh_token)
+):
+    menu = await Menu.all().values()
+
+    return {"error": False, "message": "", "menu": menu}
+
+
+# all: get menu from id
+@router.get("/{menu_id}")
+async def get_menu(
+    menu_id: int,
+    token: TokenJwt = Depends(refresh_token)
+):
+    menu = Menu.filter(id=menu_id)
+
+    if not await menu.exists():
+        raise UnicornException(
+            status=406,
+            message="Wrong menu_id"
+        )
+
+    menu = (await menu.values())[0]
+
+    if token.role != "admin":
+        m = await RoleMenu.get_or_none(role=token.role, menu_id=menu["id"])
+        if not m:
+            raise UnicornException(
+                status=403,
+                message="not allowed"
+            )
+    else:
+        menu["roles"] = [
+            x["role"] 
+            for x in await RoleMenu.filter(menu_id=menu["id"]).values()
+        ]
+    
+    menu["products"] = await MenuProduct.filter(menu_id=menu["id"]).values()
+
+    return {"error": False, "message": "", "menu": menu}
 
 
 class AddMenuItem(BaseModel):
