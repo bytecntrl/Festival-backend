@@ -57,7 +57,7 @@ async def check_product(products) -> bool:
 
         if x.get("variant"):
             variant = await Variant.filter(
-                name=x["variant"], 
+                id=x["variant"], 
                 product_id=x["id"]
             ).exists()
             if not variant:
@@ -109,7 +109,7 @@ async def add_products(products, order, menu=None):
         variant = None
         if product.get("variant"):
             variant = await Variant.get(
-                name=product["variant"], 
+                id=product["variant"], 
                 product_id=product["id"]
             )
         
@@ -131,8 +131,8 @@ async def add_products(products, order, menu=None):
 class CreateOrdersItem(BaseModel):
     # {"client": str, "person": int, "take_away": bool, "table": int}
     info: Dict[str, Union[str, int, bool]]
-    # [{"id": int, "variant": str, "ingredient": [int], "quantity": int}]
-    product: List[Dict[str, Union[int, str, List[int]]]] = []
+    # [{"id": int, "variant"?: int, "ingredient"?: [int], "quantity": int}]
+    product: List[Dict[str, Union[int, List[int]]]] = []
     # [{"id": int, "products": product}]
     menu: List[Dict[str, Union[int, Any]]] = []
 
