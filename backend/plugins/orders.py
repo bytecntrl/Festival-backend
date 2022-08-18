@@ -41,7 +41,7 @@ SCHEMA_INFO = Schema({
 SCHEMA_PRODUCT = Schema([
     {
         "id": int, 
-        Optional("variant"): str,
+        Optional("variant"): int,
         Optional("ingredient"): [int],
         "quantity": int
     }
