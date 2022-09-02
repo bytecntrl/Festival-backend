@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from schema import Schema
+from schema import Schema, And
 from tortoise.exceptions import IntegrityError
 
 from ..config import config
@@ -34,7 +34,7 @@ router = APIRouter(
 
 
 SCHEMA_ROLE = Schema(config.conf.ROLES)
-SCHEMA_VARIANT_INGREDIENT = Schema([{"name": str, "price": float}])
+SCHEMA_VARIANT_INGREDIENT = Schema([{"name": str, "price": And(int, float)}])
 
 
 # all: get all products
@@ -116,8 +116,8 @@ class AddProductItem(BaseModel):
     category: Category
     subcategory: str
     roles: List[str] = []
-    variant: List[Dict[str, Union[str, float]]] = []
-    ingredients: List[Dict[str, Union[str, float]]] = []
+    variant: List[Dict[str, Union[str, float, int]]] = []
+    ingredients: List[Dict[str, Union[str, float, int]]] = []
 
     class Config:
         smart_union = True
@@ -178,12 +178,12 @@ async def add_product(
             await RoleProduct(role=x, product=p).save()
 
         for y in variant:
-            await Variant(name=y["name"], price=y["price"], product=p).save()
+            await Variant(name=y["name"], price=float(y["price"]), product=p).save()
         
         for z in ingredients:
             await Ingredients(
                 name=z["name"], 
-                price=z["price"], 
+                price=float(z["price"]), 
                 product=p
             ).save()
 
@@ -234,7 +234,10 @@ async def add_role_product(
 
 class AddVariantProductItem(BaseModel):
     name: str
-    price: float
+    price: Union[int, float]
+
+    class Config:
+        smart_union = True
 
 
 # admin: add variant to product
@@ -273,14 +276,17 @@ async def add_variant_product(
             message="existing variant"
         )
 
-    await Variant(name=item.name, price=item.price, product=p).save()
+    await Variant(name=item.name, price=float(item.price), product=p).save()
 
     return {"error": False, "messsage": ""}
 
 
 class AddIngredientProductItem(BaseModel):
     name: str
-    price: float
+    price: Union[int, float]
+
+    class Config:
+        smart_union = True
 
 
 # admin: add ingredient to product
@@ -319,7 +325,7 @@ async def add_variant_product(
             message="existing ingredient"
         )
 
-    await Ingredients(name=item.name, price=item.price, product=p).save()
+    await Ingredients(name=item.name, price=float(item.price), product=p).save()
 
     return {"error": False, "messsage": ""}
 
