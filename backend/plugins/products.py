@@ -12,7 +12,9 @@ from ..database import (
     Products, 
     RoleProduct, 
     Subcategories,
-    Variant
+    Variant,
+    Menu,
+    MenuProduct
 )
 from ..utils import (
     Category, 
@@ -359,14 +361,21 @@ async def delete_product(
     product_id: int,
     token: TokenJwt = Depends(token_jwt)
 ):
-    product = Products.filter(id=product_id)
+    product = await Products.get_or_none(id=product_id)
 
-    if not await product.exists():
+    if not product:
         raise UnicornException(
             status=404,
             message="product not exist"
         )
     
+    menu = await MenuProduct.filter(product=product).values()
+    ids = [x["menu_id"] for x in menu]
+    ids = list(filter(lambda x: ids.count(x)==1, ids))
+
+    for x in ids:
+        await Menu.filter(id=x).delete()
+
     await product.delete()
 
     return {"error": False, "message": ""}
