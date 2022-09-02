@@ -93,7 +93,11 @@ async def unicorn_exception_handler(_: Request, exc: UnicornException):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(_: Request, exc: RequestValidationError):
     detail = exc.errors()
-    message = "Error in: " + ", ".join([x["loc"][1] for x in detail])
+    message = "Error in:\n"
+    message += "\n".join([
+        f"{' -> '.join(x['loc'])}:\n    {x['msg']}" 
+        for x in detail
+    ])
     return JSONResponse(
         status_code=422, 
         content={
