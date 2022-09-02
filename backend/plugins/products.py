@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from schema import Schema, And
+from schema import Schema, Or
 from tortoise.exceptions import IntegrityError
 
 from ..config import config
@@ -34,7 +34,7 @@ router = APIRouter(
 
 
 SCHEMA_ROLE = Schema(config.conf.ROLES)
-SCHEMA_VARIANT_INGREDIENT = Schema([{"name": str, "price": And(int, float)}])
+SCHEMA_VARIANT_INGREDIENT = Schema([{"name": str, "price": Or(int, float)}])
 
 
 # all: get all products
