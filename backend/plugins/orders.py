@@ -34,9 +34,9 @@ router = APIRouter(
 
 SCHEMA_INFO = Schema({
     "client": And(str, lambda n: len(n) > 2),
-    "person": And(int, lambda n: n > 0),
+    Optional("person"): And(int, lambda n: n > 0),
     "take_away": bool, 
-    "table": And(int, lambda n: n > 0)
+    Optional("table"): And(int, lambda n: n > 0)
 })
 SCHEMA_PRODUCT = Schema([
     {
@@ -50,18 +50,25 @@ SCHEMA_MENU = Schema([{"id": int, "products": SCHEMA_PRODUCT}])
 
 
 async def check_product(products) -> bool:
+    if not products:
+        return False
+
     for x in products:
         product = await Products.filter(id=x["id"]).exists()
         if not product:
             return False
 
-        if x.get("variant"):
-            variant = await Variant.filter(
-                id=x["variant"], 
-                product_id=x["id"]
-            ).exists()
-            if not variant:
+        variant = await Variant.filter(
+            product_id=x["id"]
+        ).values()
+        if variant:
+            if x.get("variant"):
+                if not any(map(lambda y: y["id"] == x["variant"], variant)):
+                    return False
+            else:
                 return False
+        if not variant and x.get("variant"):
+            return False
 
         for y in x.get("ingredient", []):
             ingredient = await Ingredients.filter(
@@ -182,9 +189,9 @@ async def create_orders(
 
     order = await Orders.create(
         client=info["client"],
-        person=info["person"],
+        person=info.get("person", None),
         take_away=info["take_away"],
-        table=info["table"],
+        table=info.get("table", None),
         user=await Users.get(username=token.username)
     )
 
