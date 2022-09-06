@@ -137,7 +137,7 @@ async def add_products(products, order, menu=None):
 
 class CreateOrdersItem(BaseModel):
     # {"client": str, "person": int, "take_away": bool, "table": int}
-    info: Dict[str, Union[str, int, bool]]
+    info: Dict[str, Union[str, int, bool, None]]
     # [{"id": int, "variant"?: int, "ingredient"?: [int], "quantity": int}]
     product: List[Dict[str, Union[int, List[int]]]] = []
     # [{"id": int, "products": product}]
@@ -204,4 +204,4 @@ async def create_orders(
         )
         await add_products(menu["products"], order, m)
 
-    return {"error": False, "message": ""}
+    return {"error": False, "message": "", "order_id": order.id}
