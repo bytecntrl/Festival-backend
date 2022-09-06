@@ -1,6 +1,6 @@
 from typing import Dict, Union, List, Any
 
-from schema import Schema, Optional, And
+from schema import Schema, Optional, And, Or
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
@@ -32,33 +32,11 @@ router = APIRouter(
 )
 
 
-class InfoSchemaClass(Schema):
-    def is_valid(self, data: dict, **kwargs) -> bool:
-        if not super().is_valid(data, **kwargs):
-            return False
-        
-        if (
-            data["take_away"] and
-            not(data.get("person") and
-            data.get("table"))
-        ):
-            return False
-        
-        if (
-            not data["take_away"] and 
-            (data.get("person") or 
-            data.get("table"))
-        ):
-            return False
-
-        return True
-
-
-SCHEMA_INFO = InfoSchemaClass({
+SCHEMA_INFO = Schema({
     "client": And(str, lambda n: len(n) > 2),
-    Optional("person"): And(int, lambda n: n > 0),
+    "person": Or(And(int, lambda n: n > 0), None),
     "take_away": bool, 
-    Optional("table"): And(int, lambda n: n > 0)
+    "table": Or(And(int, lambda n: n > 0), None)
 })
 SCHEMA_PRODUCT = Schema([
     {
