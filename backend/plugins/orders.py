@@ -32,7 +32,29 @@ router = APIRouter(
 )
 
 
-SCHEMA_INFO = Schema({
+class InfoSchemaClass(Schema):
+    def is_valid(self, data: dict, **kwargs) -> bool:
+        if not super().is_valid(data, **kwargs):
+            return False
+        
+        if (
+            data["take_away"] and
+            not(data.get("person") and
+            data.get("table"))
+        ):
+            return False
+        
+        if (
+            not data["take_away"] and 
+            (data.get("person") or 
+            data.get("table"))
+        ):
+            return False
+
+        return True
+
+
+SCHEMA_INFO = InfoSchemaClass({
     "client": And(str, lambda n: len(n) > 2),
     Optional("person"): And(int, lambda n: n > 0),
     "take_away": bool, 
