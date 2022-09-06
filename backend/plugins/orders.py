@@ -41,8 +41,8 @@ SCHEMA_INFO = Schema({
 SCHEMA_PRODUCT = Schema([
     {
         "id": int, 
-        Optional("variant"): int,
-        Optional("ingredient"): [int],
+        "variant": Or(int, None),
+        "ingredient": [int],
         "quantity": int
     }
 ])
@@ -139,7 +139,7 @@ class CreateOrdersItem(BaseModel):
     # {"client": str, "person": int, "take_away": bool, "table": int}
     info: Dict[str, Union[str, int, bool, None]]
     # [{"id": int, "variant"?: int, "ingredient"?: [int], "quantity": int}]
-    product: List[Dict[str, Union[int, List[int]]]] = []
+    product: List[Dict[str, Union[int, List[int], None]]] = []
     # [{"id": int, "products": product}]
     menu: List[Dict[str, Union[int, Any]]] = []
 
