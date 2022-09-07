@@ -99,6 +99,7 @@ class Orders(Model):
     take_away = fields.BooleanField()
     table = fields.IntField(null=True)
     user = fields.ForeignKeyField("models.Users")
+    time = fields.DatetimeField(auto_now=True)
 
     class Meta:
         table = "orders"

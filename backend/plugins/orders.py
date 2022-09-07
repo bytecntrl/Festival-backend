@@ -15,7 +15,9 @@ from ..database import (
     MenuProduct,
     ProductOrder,
     IngredientOrder,
-    MenuOrder
+    MenuOrder,
+    RoleProduct,
+    RoleMenu
 )
 from ..utils import (
     refresh_token, 
@@ -49,13 +51,16 @@ SCHEMA_PRODUCT = Schema([
 SCHEMA_MENU = Schema([{"id": int, "products": SCHEMA_PRODUCT}])
 
 
-async def check_product(products) -> bool:
-    if not products:
-        return False
-
+async def check_product(products, role: str, menu: bool = False) -> bool:
     for x in products:
         product = await Products.filter(id=x["id"]).exists()
         if not product:
+            return False
+
+        if (
+            not menu and 
+            not await RoleProduct.filter(role=role, product_id=x["id"]).exists()
+        ):
             return False
 
         variant = await Variant.filter(
@@ -81,10 +86,16 @@ async def check_product(products) -> bool:
     return True
 
 
-async def check_menu(menus) -> bool:
+async def check_menu(menus, role: str) -> bool:
     for x in menus:
+        if not x["products"]:
+            return False
+
         menu = await Menu.filter(id=x["id"]).exists()
         if not menu: 
+            return False
+        
+        if not await RoleMenu.filter(role=role, menu_id=x["id"]).exists():
             return False
 
         list_product = [
@@ -105,7 +116,7 @@ async def check_menu(menus) -> bool:
             if not product:
                 return False
 
-        if not await check_product(x["products"]):
+        if not await check_product(x["products"], role, menu=True):
             return False
     
     return True
@@ -133,6 +144,23 @@ async def add_products(products, order, menu=None):
                 product=p, 
                 order=order
             ).save()
+
+
+@router.get("/{order_id}")
+async def get_order(
+    order_id: int,
+    token: TokenJwt = Depends(refresh_token)
+):
+    order = await Orders.get_or_none(id=order_id)
+    if not order:
+        raise UnicornException(
+            status=406,
+            message="Order not exist"
+        )
+
+    product = await ProductOrder.filter(order=order).values()
+
+    return {"error": False, "message": "", "product": product}
 
 
 class CreateOrdersItem(BaseModel):
@@ -174,12 +202,12 @@ async def create_orders(
             status=406,
             message="Wrong menu schema"
         )
-    if not await check_product(item.product):
+    if not await check_product(item.product, token.role):
         raise UnicornException(
             status=406,
             message="Product not exist"
         )
-    if not await check_menu(item.menu):
+    if not await check_menu(item.menu, token.role):
         raise UnicornException(
             status=406,
             message="Menu not exist"

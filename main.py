@@ -72,7 +72,8 @@ register_tortoise(
                 ],
                 "default_connection": "default",
             }
-        }
+        },
+        "timezone": "Europe/Rome"
     },
     generate_schemas=True
 )
