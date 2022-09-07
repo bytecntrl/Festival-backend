@@ -59,7 +59,7 @@ register_tortoise(
                 "credentials": {
                     "host": config.conf.HOST,
                     "port": config.conf.PORT,
-                    "user": config.conf.USERNAME,
+                    "user": config.conf.DB_USERNAME,
                     "password": config.conf.PASSWORD,
                     "database": config.conf.DB_NAME,
                 }

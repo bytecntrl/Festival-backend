@@ -4,7 +4,7 @@ from pydantic import BaseSettings
 
 
 LIST_ENV = [
-    "USERNAME",
+    "DB_USERNAME",
     "PASSWORD",
     "HOST",
     "PORT",
@@ -15,7 +15,7 @@ LIST_ENV = [
 
 class Config(BaseSettings):
     # db
-    USERNAME: str
+    DB_USERNAME: str
     PASSWORD: str
     HOST: str
     PORT: str = "5432"
