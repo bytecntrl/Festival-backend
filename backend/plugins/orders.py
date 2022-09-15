@@ -1,4 +1,5 @@
 from typing import Dict, Union, List, Any
+from collections import defaultdict
 
 from schema import Schema, Optional, And, Or
 from fastapi import APIRouter, Depends
@@ -17,7 +18,8 @@ from ..database import (
     IngredientOrder,
     MenuOrder,
     RoleProduct,
-    RoleMenu
+    RoleMenu,
+    Subcategories
 )
 from ..utils import (
     refresh_token, 
@@ -158,9 +160,33 @@ async def get_order(
             message="Order not exist"
         )
 
-    product = await ProductOrder.filter(order=order).values()
+    products = await ProductOrder.filter(order=order).values()
+    result = defaultdict(list)
 
-    return {"error": False, "message": "", "product": product}
+    for x in products:
+        data = {}
+        p = await Products.get(id=x["product_id"])
+
+        data["name"] = p.name
+        data["price"] = p.price
+        
+        variant = await Variant.get_or_none(id=x["variant_id"])
+        ingredients = await IngredientOrder.filter(order_id=order_id).values()
+
+        if variant:
+            data["variant"] = variant.name
+
+        if ingredients:
+            data["ingredients"] = []
+
+        for ingredient in ingredients:
+            name = (await Ingredients.get(id=ingredient["ingredient_id"])).name
+            data["ingredients"].append(name)
+        
+        list_order = (await Subcategories.get(id=p.subcategory_id)).order
+        result[p.category].insert(list_order, data)
+
+    return {"error": False, "message": "", "product": dict(result)}
 
 
 class CreateOrdersItem(BaseModel):
