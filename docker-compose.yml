@@ -9,6 +9,8 @@ services:
       - .env
     networks:
       - festival-backend
+    ports:
+      - 127.0.0.1:5432:5432
     volumes:
       - festival_db_data:/var/lib/postgresql/data
     container_name: festival_postgres_db
