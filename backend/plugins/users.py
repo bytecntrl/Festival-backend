@@ -29,7 +29,8 @@ async def get_users(
     return {
         "error": False,
         "message": "",
-        "users": lst
+        "users": lst,
+        "count": await users.count()
     }
 
 

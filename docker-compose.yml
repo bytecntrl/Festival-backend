@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: "${PASSWORD}"
+      POSTGRES_USER: "${DB_USERNAME}"
+    env_file:
+      - .env
+    networks:
+      - backend
+    volumes:
+      - festival_db_data:/var/lib/postgresql/data
+    container_name: festival_postgres_db
+
+  backend:
+    build: .
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - festival-backend
+    ports:
+      - 127.0.0.1:8000:8000
+    depends_on:
+      - db
+    container_name: festival_backend
+
+volumes:
+  festival_db_data:
+    name: festival_db_data
+
+networks:
+  festival-backend:
+    name: festival-backend
