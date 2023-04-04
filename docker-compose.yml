@@ -21,7 +21,7 @@ services:
     networks:
       - festival-backend
     ports:
-      - 127.0.0.1:8000:8000
+      - 127.0.0.1:8000:80
     depends_on:
       - db
     container_name: festival_backend
