@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+import datetime
 
 import jwt
 from argon2 import PasswordHasher
@@ -14,7 +14,7 @@ from tortoise.exceptions import IntegrityError
 
 from ..config import Session
 from ..database import Users
-from ..utils import TokenJwt, UnicornException, refresh_token, roles, token_jwt
+from ..utils import TokenJwt, UnicornException, roles, token_jwt
 
 
 router = APIRouter(
@@ -40,34 +40,6 @@ async def login(
         ph = PasswordHasher()
         ph.verify(user["password"], password)
 
-        token = jwt.encode(
-            {
-                "exp": datetime.now(tz=timezone.utc)+timedelta(seconds=60*15),
-                "username": username,
-                "role": user["role"],
-                "type": "access"
-            }, 
-            Session.config.JWT_SECRET,
-            algorithm="HS256"
-        )
-
-        refresh_token = jwt.encode(
-            {
-                "exp": datetime.now(tz=timezone.utc)+timedelta(seconds=60*60),
-                "username": username,
-                "role": user["role"],
-                "type": "refresh"
-            },
-            Session.config.JWT_SECRET,
-            algorithm="HS256"
-        )
-
-        return {
-            "error": False,
-            "message": "",
-            "token": token,
-            "refresh_token": refresh_token
-        }
     except (
         VerificationError,
         VerifyMismatchError,
@@ -78,6 +50,27 @@ async def login(
             status=404,
             message="Invalid username or password"
         )
+    
+    exp = (
+        datetime.datetime.now(tz=datetime.timezone.utc) + 
+        datetime.timedelta(seconds=Session.config.JWT_TOKEN_EXPIRES)
+    )
+
+    token = jwt.encode(
+        {
+            "exp": exp,
+            "username": username,
+            "role": user["role"]
+        }, 
+        Session.config.JWT_SECRET,
+        algorithm="HS256"
+    )
+
+    return {
+        "error": False,
+        "message": "",
+        "token": token
+    }
 
 
 class RegisterItem(BaseModel):
@@ -99,6 +92,12 @@ async def register(
             message="Non-existent role"
         )
 
+    if item.password >= 29 or item.username >= 29:
+        raise UnicornException(
+            status=400,
+            message="User or password too long"
+        )
+
     try:
         ph = PasswordHasher()
 
@@ -108,56 +107,13 @@ async def register(
             role=item.role
         ).save()
 
-        return {
-            "error": False,
-            "message": ""
-        }
     except IntegrityError:
         raise UnicornException(
             status=400,
             message="User alredy exists"
         )
-
-
-class TokenItem(BaseModel):
-    password: str
-
-
-# all: generate new access token
-@router.post("/token")
-async def new_token(
-    item: TokenItem,
-    token: TokenJwt = Depends(refresh_token)
-):
-    user = await Users.get(username=token.username)
-
-    try:
-        ph = PasswordHasher()
-        ph.verify(user.password, item.password)
-
-        access_token = jwt.encode(
-            {
-                "exp": datetime.now(tz=timezone.utc)+timedelta(seconds=60*15),
-                "username": token.username,
-                "role": user.role,
-                "type": "access"
-            }, 
-            Session.config.JWT_SECRET,
-            algorithm="HS256"
-        )
-
-        return {
-            "error": False,
-            "message": "",
-            "token": access_token
-        }
-    except (
-        VerificationError,
-        VerifyMismatchError,
-        HashingError,
-        InvalidHash
-    ):
-        raise UnicornException(
-            status=404,
-            message="Invalid password"
-        )
+    
+    return {
+        "error": False,
+        "message": ""
+    }

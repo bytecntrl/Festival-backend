@@ -22,6 +22,10 @@ router = APIRouter(
 )
 
 
+SCHEMA_MENU = Schema([{"product": int, "optional": bool}])
+SCHEMA_ROLE = Schema(Session.config.ROLES)
+
+
 async def exist_products(products: List[str]) -> bool:
     if not products:
         return False
@@ -92,9 +96,6 @@ async def add_menu(
     item: AddMenuItem,
     token: TokenJwt = Depends(token_jwt)
 ):
-    SCHEMA_MENU = Schema([{"product": int, "optional": bool}])
-    SCHEMA_ROLE = Schema(Session.config.ROLES)
-
     if not item.name:
         raise UnicornException(
             status=400,
