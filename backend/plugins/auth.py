@@ -15,6 +15,7 @@ from tortoise.exceptions import IntegrityError
 from ..config import Session
 from ..database import Users
 from ..utils import TokenJwt, UnicornException, roles, token_jwt
+from ..utils.enums import Roles
 
 
 router = APIRouter(
@@ -76,7 +77,7 @@ async def login(
 class RegisterItem(BaseModel):
     username: str
     password: str
-    role: str
+    role: Roles
 
 
 # admin: add new user
@@ -86,13 +87,13 @@ async def register(
     item: RegisterItem,
     token: TokenJwt = Depends(token_jwt)
 ):
-    if item.role not in Session.config.ROLES:
+    if item.role.value == "admin":
         raise UnicornException(
             status=404,
-            message="Non-existent role"
+            message="Unable to create admin user"
         )
 
-    if item.password >= 29 or item.username >= 29:
+    if len(item.password) >= 29 or len(item.username) >= 29:
         raise UnicornException(
             status=400,
             message="User or password too long"
@@ -104,7 +105,7 @@ async def register(
         await Users(
             username=item.username,
             password=ph.hash(item.password),
-            role=item.role
+            role=item.role.value
         ).save()
 
     except IntegrityError:

@@ -11,7 +11,7 @@ from jwt.exceptions import (
     MissingRequiredClaimError,
 )
 
-from ..config import config
+from ..config import Session
 from .exception import UnicornException
 from .token import TokenJwt
 
@@ -23,15 +23,9 @@ async def token_jwt(
         token = access_token.split("Bearer ")[1]
         d = TokenJwt(**jwt.decode(
             token, 
-            config.conf.JWT_SECRET, 
+            Session.config.JWT_SECRET, 
             algorithms=["HS256"]
         ))
-
-        if d.type != "access":
-            raise UnicornException(
-                status=400, 
-                message="Not access token!"
-            )
 
         return d
 
@@ -59,7 +53,7 @@ async def refresh_token(
         token = refresh_token.split("Bearer ")[1]
         d = TokenJwt(**jwt.decode(
             token, 
-            config.conf.JWT_SECRET, 
+            Session.config.JWT_SECRET, 
             algorithms=["HS256"]
         ))
 

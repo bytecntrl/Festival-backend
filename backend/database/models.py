@@ -1,7 +1,7 @@
 from tortoise import fields
 from tortoise.models import Model
 
-from ..utils import Category
+from ..utils.enums import Category, Roles
 
 
 class Users(Model):
@@ -11,7 +11,7 @@ class Users(Model):
 
     username = fields.CharField(30, unique=True)
     password = fields.TextField()
-    role = fields.CharField(20)
+    role = fields.CharEnumField(Roles)
 
     class Meta:
         table = "users"
