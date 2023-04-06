@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from schema import Schema
 from tortoise.exceptions import IntegrityError
 
-from ..config import config
+from ..config import Session
 from ..database import Menu, MenuProduct, Products, RoleMenu
 from ..utils import (
     TokenJwt, 
@@ -20,10 +20,6 @@ router = APIRouter(
     prefix="/menu",
     tags=["menu"]
 )
-
-
-SCHEMA_MENU = Schema([{"product": int, "optional": bool}])
-SCHEMA_ROLE = Schema(config.conf.ROLES)
 
 
 async def exist_products(products: List[str]) -> bool:
@@ -96,6 +92,9 @@ async def add_menu(
     item: AddMenuItem,
     token: TokenJwt = Depends(token_jwt)
 ):
+    SCHEMA_MENU = Schema([{"product": int, "optional": bool}])
+    SCHEMA_ROLE = Schema(Session.config.ROLES)
+
     if not item.name:
         raise UnicornException(
             status=400,
@@ -196,7 +195,7 @@ async def add_role(
     item: AddRoleItem,
     token: TokenJwt = Depends(token_jwt)
 ):
-    if item.role not in config.conf.ROLES:
+    if item.role not in Session.config.ROLES:
         raise UnicornException(
             status=406,
             message="Wrong roles"

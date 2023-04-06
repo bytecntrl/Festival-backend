@@ -5,7 +5,7 @@ from schema import Schema, Optional, And, Or
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from ..config import config
+from ..config import Session
 from ..database import (
     Orders, 
     Products,
@@ -203,7 +203,7 @@ class CreateOrdersItem(BaseModel):
 
 # roles: create orders
 @router.post("/")
-@roles(config.conf.ROLES)
+@roles(Session.config.ROLES)
 async def create_orders(
     item: CreateOrdersItem,
     token: TokenJwt = Depends(token_jwt)

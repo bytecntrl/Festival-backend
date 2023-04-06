@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from schema import Schema, Or
 from tortoise.exceptions import IntegrityError
 
-from ..config import config
+from ..config import Session
 from ..database import (
     Ingredients, 
     Products, 
@@ -33,7 +33,7 @@ router = APIRouter(
 )
 
 
-SCHEMA_ROLE = Schema(config.conf.ROLES)
+SCHEMA_ROLE = Schema(Session.config.ROLES)
 SCHEMA_VARIANT_INGREDIENT = Schema([{"name": str, "price": Or(int, float)}])
 
 
@@ -208,7 +208,7 @@ async def add_role_product(
     item: AddRoleProductItem,
     token: TokenJwt = Depends(token_jwt)
 ):
-    if item.role not in config.conf.ROLES:
+    if item.role not in Session.config.ROLES:
         raise UnicornException(
             status=406,
             message="Wrong roles"

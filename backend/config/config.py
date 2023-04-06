@@ -10,6 +10,7 @@ LIST_ENV = [
     "PORT",
     "DB_NAME",
     "JWT_SECRET",
+    "JWT_TOKEN_EXPIRES",
 ]
 
 
@@ -23,6 +24,7 @@ class Config(BaseSettings):
 
     # token jwt
     JWT_SECRET: str
+    JWT_TOKEN_EXPIRES: int
 
     # look
     LOCK = Lock()
@@ -43,6 +45,3 @@ class Config(BaseSettings):
             }
             for x in LIST_ENV
         }
-
-
-conf: Config

@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError
 
-from ..config import config
+from ..config import Session
 from ..database import Users
 from ..utils import TokenJwt, UnicornException, refresh_token, roles, token_jwt
 
@@ -47,7 +47,7 @@ async def login(
                 "role": user["role"],
                 "type": "access"
             }, 
-            config.conf.JWT_SECRET,
+            Session.config.JWT_SECRET,
             algorithm="HS256"
         )
 
@@ -58,7 +58,7 @@ async def login(
                 "role": user["role"],
                 "type": "refresh"
             },
-            config.conf.JWT_SECRET,
+            Session.config.JWT_SECRET,
             algorithm="HS256"
         )
 
@@ -93,7 +93,7 @@ async def register(
     item: RegisterItem,
     token: TokenJwt = Depends(token_jwt)
 ):
-    if item.role not in config.conf.ROLES:
+    if item.role not in Session.config.ROLES:
         raise UnicornException(
             status=404,
             message="Non-existent role"
@@ -142,7 +142,7 @@ async def new_token(
                 "role": user.role,
                 "type": "access"
             }, 
-            config.conf.JWT_SECRET,
+            Session.config.JWT_SECRET,
             algorithm="HS256"
         )
 
