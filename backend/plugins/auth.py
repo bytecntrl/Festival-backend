@@ -1,4 +1,5 @@
 import datetime
+import string
 
 import jwt
 from argon2 import PasswordHasher
@@ -91,6 +92,18 @@ async def register(
         raise UnicornException(
             status=404,
             message="Unable to create admin user"
+        )
+
+    if not item.username or not item.password:
+        raise UnicornException(
+            status=400,
+            message="User or password missed"
+        )
+    
+    if not all(map(lambda x: x in string.ascii_letters, item.username)):
+        raise UnicornException(
+            status=400,
+            message="The username has illegal characters"
         )
 
     if len(item.password) >= 29 or len(item.username) >= 29:

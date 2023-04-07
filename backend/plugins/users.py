@@ -1,9 +1,11 @@
+import math
+
 from argon2 import PasswordHasher
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from ..database import Users
-from ..utils import TokenJwt, UnicornException, refresh_token, roles, token_jwt
+from ..utils import TokenJwt, UnicornException, roles, token_jwt
 
 
 router = APIRouter(
@@ -17,7 +19,7 @@ router = APIRouter(
 @roles("admin")
 async def get_users(
     page: int,
-    token: TokenJwt = Depends(refresh_token)
+    token: TokenJwt = Depends(token_jwt)
 ):
     users = Users.all().exclude(username=token.username)
     lst = await users.offset((page-1)*10).limit(10).values(
@@ -30,7 +32,7 @@ async def get_users(
         "error": False,
         "message": "",
         "users": lst,
-        "count": await users.count()
+        "page": math.ceil(await users.count() / 10)
     }
 
 
@@ -38,7 +40,7 @@ async def get_users(
 @router.get("/{username}")
 async def get_user_admin(
     username: str,
-    token: TokenJwt = Depends(refresh_token)
+    token: TokenJwt = Depends(token_jwt)
 ):
     user = await Users.get_or_none(username=username)
 
@@ -100,16 +102,16 @@ async def delete_user(
     if not user:
         raise UnicornException(
             status=404,
-            message="user not exist"
+            message="User not exist"
         )
     
     if user.role == "admin":
         raise UnicornException(
             status=403,
-            message="you cannot delete an admin"
+            message="You cannot delete an admin"
         )
 
-    await Users.filter(id=user_id).delete()
+    await user.delete()
 
     return {
         "error": False,
