@@ -3,24 +3,22 @@ from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from schema import Schema, Or
+from schema import Or, Schema
 from tortoise.exceptions import IntegrityError
 
-from ..config import Session
 from ..database import (
     Ingredients, 
+    Menu, 
+    MenuProduct, 
     Products, 
-    RoleProduct, 
-    Subcategories,
-    Variant,
-    Menu,
-    MenuProduct
+    RoleProduct,
+    Subcategories, 
+    Variant
 )
 from ..utils import (
-    Category, 
     TokenJwt, 
     UnicornException, 
-    refresh_token,
+    enums,
     remove_equal_dictionaries, 
     roles, 
     token_jwt
@@ -33,14 +31,14 @@ router = APIRouter(
 )
 
 
-SCHEMA_ROLE = Schema(Session.config.ROLES)
+SCHEMA_ROLE = Schema(enums.Roles.roles())
 SCHEMA_VARIANT_INGREDIENT = Schema([{"name": str, "price": Or(int, float)}])
 
 
 # all: get all products
 @router.get("/")
 async def get_products(
-    token: TokenJwt = Depends(refresh_token)
+    token: TokenJwt = Depends(token_jwt)
 ):
     products = defaultdict(list)
 
@@ -65,7 +63,7 @@ async def get_products(
 # all: get list of product
 @router.get("/list")
 async def get_list_product(
-    token: TokenJwt = Depends(refresh_token)
+    token: TokenJwt = Depends(token_jwt)
 ):
     return {
         "error": False,
@@ -78,7 +76,7 @@ async def get_list_product(
 @router.get("/{product_id}")
 async def get_product(
     product_id: int,
-    token: TokenJwt = Depends(refresh_token)
+    token: TokenJwt = Depends(token_jwt)
 ):
     p = Products.filter(id=product_id)
 
@@ -113,7 +111,7 @@ async def get_product(
 class AddProductItem(BaseModel):
     name: str
     price: float
-    category: Category
+    category: enums.Category
     subcategory: str
     roles: List[str] = []
     variant: List[Dict[str, Union[str, float, int]]] = []
@@ -208,7 +206,7 @@ async def add_role_product(
     item: AddRoleProductItem,
     token: TokenJwt = Depends(token_jwt)
 ):
-    if item.role not in Session.config.ROLES:
+    if not enums.Roles.is_in_roles(item.role):
         raise UnicornException(
             status=406,
             message="Wrong roles"
