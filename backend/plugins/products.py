@@ -112,7 +112,7 @@ class AddProductItem(BaseModel):
     name: str
     price: float
     category: enums.Category
-    subcategory: str
+    subcategory: int
     roles: List[str] = []
     variant: List[Dict[str, Union[str, float, int]]] = []
     ingredients: List[Dict[str, Union[str, float, int]]] = []
@@ -158,7 +158,7 @@ async def add_product(
     ingredients = remove_equal_dictionaries(item.ingredients, "name")
 
     try:
-        s = await Subcategories.get_or_none(name=item.subcategory)
+        s = await Subcategories.get_or_none(id=item.subcategory)
         if not s:
             raise UnicornException(
                 status=406,
